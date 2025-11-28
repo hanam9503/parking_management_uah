@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if vehicle %}Sửa xe{% else %}Thêm xe{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto max-w-2xl">
+    <h1 class="text-3xl font-bold mb-6">
+        <i class="fas fa-car"></i> {% if vehicle %}Sửa thông tin xe{% else %}Thêm xe mới{% endif %}
+    </h1>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- Teacher Selection -->
+            {% if not vehicle %}
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-user"></i> Giảng viên *
+                </label>
+                <select name="teacher_id" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Chọn giảng viên --</option>
+                    {% for teacher in teachers %}
+                    <option value="{{ teacher._id }}">
+                        {{ teacher.user.full_name }} - {{ teacher.faculty }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            <!-- License Plate -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-id-card"></i> Biển số xe *
+                </label>
+                <input type="text" name="license_plate" required
+                       value="{% if vehicle %}{{ vehicle.license_plate }}{% endif %}"
+                       placeholder="VD: 29K1-12345"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase">
+                <p class="text-xs text-gray-500 mt-1">Nhập biển số không dấu, VD: 29K1-12345</p>
+            </div>
+            
+            <!-- Vehicle Type -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-list"></i> Loại xe *
+                </label>
+                <select name="vehicle_type" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    {% for type in vehicle_types %}
+                    <option value="{{ type }}" {% if vehicle and vehicle.vehicle_type == type %}selected{% endif %}>
+                        {% if type == 'motorcycle' %}Xe máy
+                        {% elif type == 'car' %}Ô tô
+                        {% else %}Xe đạp{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Brand -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-industry"></i> Hãng xe
+                </label>
+                <input type="text" name="brand"
+                       value="{% if vehicle %}{{ vehicle.brand }}{% endif %}"
+                       placeholder="VD: Honda, Yamaha, Toyota..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Color -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-palette"></i> Màu xe
+                </label>
+                <input type="text" name="color"
+                       value="{% if vehicle %}{{ vehicle.color }}{% endif %}"
+                       placeholder="VD: Đen, Trắng, Đỏ..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Buttons -->
+            <div class="flex space-x-4">
+                <button type="submit" 
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition">
+                    <i class="fas fa-save"></i> Lưu
+                </button>
+                <a href="{% url 'admin_vehicles_list' %}" 
+                   class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg text-center transition">
+                    <i class="fas fa-times"></i> Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

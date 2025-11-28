@@ -1,0 +1,21 @@
+# Django Core
+Django==4.2.7
+python-dotenv==1.0.0
+
+# MongoDB - CHỈ CẦN PYMONGO
+pymongo==4.6.0
+dnspython==2.4.2              # Cần cho MongoDB Atlas
+
+# Authentication & Security
+PyJWT==2.8.0
+bcrypt==4.1.1
+
+# QR Code
+qrcode==7.4.2
+Pillow==10.1.0
+
+# Utils
+python-dateutil==2.8.2
+
+# Chart (cho dashboard)
+# Không cần cài, dùng Chart.js CDN

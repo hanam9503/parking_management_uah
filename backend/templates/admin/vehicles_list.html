@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý xe{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">
+            <i class="fas fa-car"></i> Quản lý xe
+        </h1>
+        <a href="{% url 'admin_vehicles_add' %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+            <i class="fas fa-plus"></i> Thêm xe mới
+        </a>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+        <p class="text-gray-600">
+            Tổng số xe: <span class="font-bold text-blue-600">{{ total_vehicles }}</span>
+        </p>
+    </div>
+    
+    <!-- Vehicles Table -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Biển số</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loại xe</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giảng viên</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Khoa</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for vehicle in vehicles %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">{{ forloop.counter }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="font-bold text-blue-600">{{ vehicle.license_plate }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if vehicle.vehicle_type == 'motorcycle' %}
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                                <i class="fas fa-motorcycle"></i> Xe máy
+                            </span>
+                        {% elif vehicle.vehicle_type == 'car' %}
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                                <i class="fas fa-car"></i> Ô tô
+                            </span>
+                        {% else %}
+                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">
+                                <i class="fas fa-bicycle"></i> Xe đạp
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ vehicle.user.full_name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ vehicle.teacher.faculty }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'admin_vehicles_edit' vehicle._id %}" 
+                           class="text-blue-600 hover:text-blue-800 mr-3">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'admin_vehicles_delete' vehicle._id %}" 
+                           onclick="return confirm('Xác nhận xóa xe này?')"
+                           class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                        Chưa có xe nào
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

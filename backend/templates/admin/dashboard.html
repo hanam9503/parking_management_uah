@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <h1 class="text-3xl font-bold mb-6">
+        <i class="fas fa-crown text-yellow-500"></i> Dashboard Quản trị
+    </h1>
+    
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <!-- Total Teachers -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Giảng viên</p>
+                    <h3 class="text-3xl font-bold text-blue-600">{{ total_teachers }}</h3>
+                </div>
+                <i class="fas fa-chalkboard-teacher text-4xl text-blue-200"></i>
+            </div>
+        </div>
+        
+        <!-- Total Vehicles -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Xe đã đăng ký</p>
+                    <h3 class="text-3xl font-bold text-green-600">{{ total_vehicles }}</h3>
+                </div>
+                <i class="fas fa-car text-4xl text-green-200"></i>
+            </div>
+        </div>
+        
+        <!-- Currently Inside -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Đang trong bãi</p>
+                    <h3 class="text-3xl font-bold text-purple-600">{{ parking_stats.current_inside }}</h3>
+                </div>
+                <i class="fas fa-parking text-4xl text-purple-200"></i>
+            </div>
+        </div>
+        
+        <!-- Today's Total -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Lượt hôm nay</p>
+                    <h3 class="text-3xl font-bold text-orange-600">{{ parking_stats.total_today }}</h3>
+                </div>
+                <i class="fas fa-chart-line text-4xl text-orange-200"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Parking Capacity -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {% for config in parking_configs %}
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="font-bold text-lg mb-4">
+                {% if config.vehicle_type == 'motorcycle' %}
+                    <i class="fas fa-motorcycle text-blue-500"></i> Xe máy
+                {% elif config.vehicle_type == 'car' %}
+                    <i class="fas fa-car text-green-500"></i> Ô tô
+                {% else %}
+                    <i class="fas fa-bicycle text-yellow-500"></i> Xe đạp
+                {% endif %}
+            </h3>
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span>Đã đỗ: {{ config.current_occupied }}/{{ config.total_capacity }}</span>
+                    <span>
+                        {% widthratio config.current_occupied config.total_capacity 100 %}%
+                    </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-blue-600 h-4 rounded-full" 
+                         style="width: {% widthratio config.current_occupied config.total_capacity 100 %}%"></div>
+                </div>
+            </div>
+            <p class="text-gray-600">
+                Còn trống: {{ config.total_capacity|add:config.current_occupied|add:"-"|add:config.current_occupied }} chỗ
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">
+            <i class="fas fa-tools"></i> Quản lý nhanh
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="{% url 'admin_teachers_list' %}" 
+               class="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg text-center transition">
+                <i class="fas fa-users text-2xl mb-2"></i>
+                <p>Quản lý GV</p>
+            </a>
+            <a href="{% url 'admin_vehicles_list' %}" 
+               class="bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg text-center transition">
+                <i class="fas fa-car text-2xl mb-2"></i>
+                <p>Quản lý xe</p>
+            </a>
+            <a href="{% url 'admin_parking_history' %}" 
+               class="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg text-center transition">
+                <i class="fas fa-history text-2xl mb-2"></i>
+                <p>Lịch sử</p>
+            </a>
+            <a href="{% url 'admin_parking_config' %}" 
+               class="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg text-center transition">
+                <i class="fas fa-cog text-2xl mb-2"></i>
+                <p>Cấu hình</p>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
