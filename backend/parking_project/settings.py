@@ -95,7 +95,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MONGODB_URI = os.getenv('MONGODB_URI')
 MONGODB_DB = os.getenv('MONGODB_DB', 'parkingDBsql')
 
-
-# University Config
-UNIVERSITY_NAME = os.getenv('UNIVERSITY_NAME')
-UNIVERSITY_ADDRESS = os.getenv('UNIVERSITY_ADDRESS')
+# URL chuyển hướng khi chưa đăng nhập
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/teacher/dashboard/'

@@ -24,7 +24,7 @@ def role_required(*roles):
             user_role = request.session.get('role')
             if user_role not in roles:
                 messages.error(request, 'Bạn không có quyền truy cập trang này')
-                return redirect('login')
+                return redirect('teacher_dashboard' if user_role == 'teacher' else 'login')
             
             return view_func(request, *args, **kwargs)
         return wrapper
