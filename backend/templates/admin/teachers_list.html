@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Quản lý giảng viên{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">
+            <i class="fas fa-chalkboard-teacher"></i> Quản lý giảng viên
+        </h1>
+        <a href="{% url 'admin_teachers_add' %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+            <i class="fas fa-plus"></i> Thêm giảng viên
+        </a>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+        <p class="text-gray-600">
+            Tổng số giảng viên: <span class="font-bold text-blue-600">{{ total_teachers }}</span>
+        </p>
+    </div>
+    
+    <!-- Teachers Table -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã NV</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Họ tên</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Khoa</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bộ môn</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SĐT</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for teacher in teachers %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">{{ forloop.counter }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="font-bold text-blue-600">{{ teacher.employee_id }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ teacher.user.full_name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ teacher.faculty }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ teacher.department }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ teacher.user.email }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ teacher.user.phone }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'admin_teachers_edit' teacher._id %}" 
+                           class="text-blue-600 hover:text-blue-800 mr-3">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'admin_teachers_delete' teacher._id %}" 
+                           onclick="return confirm('Xác nhận xóa giảng viên này? Tất cả xe và QR code sẽ bị xóa.')"
+                           class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                        Chưa có giảng viên nào
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

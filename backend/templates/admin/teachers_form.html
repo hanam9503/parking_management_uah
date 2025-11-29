@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if teacher %}Sửa giảng viên{% else %}Thêm giảng viên{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto max-w-2xl">
+    <h1 class="text-3xl font-bold mb-6">
+        <i class="fas fa-chalkboard-teacher"></i> {% if teacher %}Sửa thông tin giảng viên{% else %}Thêm giảng viên mới{% endif %}
+    </h1>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- User Information -->
+            <h2 class="text-xl font-bold mb-4 text-blue-600">
+                <i class="fas fa-user"></i> Thông tin tài khoản
+            </h2>
+            
+            <!-- Username -->
+            {% if not teacher %}
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-user-circle"></i> Tên đăng nhập *
+                </label>
+                <input type="text" name="username" required
+                       placeholder="VD: nguyenvana"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Chỉ chữ cái thường, số và dấu gạch dưới</p>
+            </div>
+            
+            <!-- Password -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-lock"></i> Mật khẩu *
+                </label>
+                <input type="password" name="password" required
+                       placeholder="Nhập mật khẩu"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            {% endif %}
+            
+            <!-- Full Name -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-signature"></i> Họ và tên *
+                </label>
+                <input type="text" name="full_name" required
+                       value="{% if teacher %}{{ teacher.user.full_name }}{% endif %}"
+                       placeholder="VD: Nguyễn Văn A"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Email -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-envelope"></i> Email *
+                </label>
+                <input type="email" name="email" required
+                       value="{% if teacher %}{{ teacher.user.email }}{% endif %}"
+                       placeholder="example@uah.edu.vn"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Phone -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-phone"></i> Số điện thoại *
+                </label>
+                <input type="tel" name="phone" required
+                       value="{% if teacher %}{{ teacher.user.phone }}{% endif %}"
+                       placeholder="0901234567"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Teacher Information -->
+            <h2 class="text-xl font-bold mb-4 text-green-600 border-t pt-4">
+                <i class="fas fa-id-badge"></i> Thông tin giảng viên
+            </h2>
+            
+            <!-- Employee ID -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-id-card"></i> Mã nhân viên *
+                </label>
+                <input type="text" name="employee_id" required
+                       value="{% if teacher %}{{ teacher.employee_id }}{% endif %}"
+                       placeholder="VD: KT001"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Faculty -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-building"></i> Khoa *
+                </label>
+                <select name="faculty" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Chọn khoa --</option>
+                    <option value="Khoa Kiến trúc" {% if teacher and teacher.faculty == 'Khoa Kiến trúc' %}selected{% endif %}>Khoa Kiến trúc</option>
+                    <option value="Khoa Xây dựng" {% if teacher and teacher.faculty == 'Khoa Xây dựng' %}selected{% endif %}>Khoa Xây dựng</option>
+                    <option value="Khoa Quy hoạch" {% if teacher and teacher.faculty == 'Khoa Quy hoạch' %}selected{% endif %}>Khoa Quy hoạch</option>
+                    <option value="Khoa Nội thất" {% if teacher and teacher.faculty == 'Khoa Nội thất' %}selected{% endif %}>Khoa Nội thất</option>
+                    <option value="Khoa Kỹ thuật công trình" {% if teacher and teacher.faculty == 'Khoa Kỹ thuật công trình' %}selected{% endif %}>Khoa Kỹ thuật công trình</option>
+                </select>
+            </div>
+            
+            <!-- Department -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-sitemap"></i> Bộ môn *
+                </label>
+                <input type="text" name="department" required
+                       value="{% if teacher %}{{ teacher.department }}{% endif %}"
+                       placeholder="VD: Bộ môn Thiết kế Kiến trúc"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Specialized Area -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-graduation-cap"></i> Chuyên môn
+                </label>
+                <input type="text" name="specialized_area"
+                       value="{% if teacher %}{{ teacher.specialized_area }}{% endif %}"
+                       placeholder="VD: Thiết kế đô thị"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Buttons -->
+            <div class="flex space-x-4">
+                <button type="submit" 
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-bold">
+                    <i class="fas fa-save"></i> Lưu
+                </button>
+                <a href="{% url 'admin_teachers_list' %}" 
+                   class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg text-center transition font-bold">
+                    <i class="fas fa-times"></i> Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

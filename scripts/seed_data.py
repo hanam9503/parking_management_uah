@@ -12,6 +12,7 @@ import django
 django.setup()
 
 from core.mongodb import db
+from core.utils import hash_password, get_current_timestamp
 from bson import ObjectId
 
 
@@ -91,13 +92,31 @@ def seed_users():
         try:
             existing_user = db.users.find_one({"username": user_data['username']})
 
+            # Build payload compatible with User model (store hashed password)
+            user_payload = {
+                'username': user_data['username'],
+                'password_hash': hash_password(user_data['password']),
+                'email': user_data['email'],
+                'full_name': user_data['full_name'],
+                'phone': user_data['phone'],
+                'role': user_data['role'],
+                'is_active': True,
+                'created_at': get_current_timestamp(),
+                'last_login': None
+            }
+
             if not existing_user:
-                result = db.users.insert_one(user_data)
+                result = db.users.insert_one(user_payload)
                 user_id = result.inserted_id
                 print(f"Created user: {user_data['username']}")
             else:
                 user_id = existing_user["_id"]
-                print(f"User exists: {user_data['username']}")
+                # If existing user has plaintext 'password', migrate it to 'password_hash'
+                if 'password' in existing_user or 'password_hash' not in existing_user:
+                    db.users.update_one({'_id': user_id}, {'$set': {'password_hash': user_payload['password_hash'], 'is_active': True}, '$unset': {'password': ''}})
+                    print(f"Updated password for existing user: {user_data['username']}")
+                else:
+                    print(f"User exists: {user_data['username']}")
 
             # Nếu là teacher thì tạo bản ghi teachers
             if user_data['role'] == 'teacher':

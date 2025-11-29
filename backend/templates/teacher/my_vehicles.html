@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Xe của tôi{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">
+            <i class="fas fa-car"></i> Xe của tôi
+        </h1>
+        <a href="{% url 'teacher_vehicles_add' %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+            <i class="fas fa-plus"></i> Đăng ký xe mới
+        </a>
+    </div>
+    
+    {% if vehicles %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for vehicle in vehicles %}
+        <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition">
+            <!-- Vehicle Header -->
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-2xl font-bold text-blue-600">{{ vehicle.license_plate }}</h3>
+                    <p class="text-gray-600">
+                        {% if vehicle.vehicle_type == 'motorcycle' %}
+                            <i class="fas fa-motorcycle text-blue-500"></i> Xe máy
+                        {% elif vehicle.vehicle_type == 'car' %}
+                            <i class="fas fa-car text-green-500"></i> Ô tô
+                        {% else %}
+                            <i class="fas fa-bicycle text-yellow-500"></i> Xe đạp
+                        {% endif %}
+                    </p>
+                </div>
+                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                    <i class="fas fa-check-circle"></i> Hoạt động
+                </span>
+            </div>
+            
+            <!-- Vehicle Info -->
+            <div class="space-y-2 mb-4 text-sm text-gray-600">
+                {% if vehicle.brand %}
+                <p><i class="fas fa-industry w-5"></i> {{ vehicle.brand }}</p>
+                {% endif %}
+                {% if vehicle.color %}
+                <p><i class="fas fa-palette w-5"></i> {{ vehicle.color }}</p>
+                {% endif %}
+                <p><i class="fas fa-calendar w-5"></i> Đăng ký: {{ vehicle.created_at|date:"d/m/Y" }}</p>
+            </div>
+            
+            <!-- QR Code Preview -->
+            {% if vehicle.qr_code %}
+            <div class="bg-gray-50 p-4 rounded-lg mb-4 text-center">
+                <img src="/media/{{ vehicle.qr_code.qr_image_path }}" 
+                     alt="QR Code" 
+                     class="w-32 h-32 mx-auto">
+            </div>
+            {% endif %}
+            
+            <!-- Actions -->
+            <div class="grid grid-cols-2 gap-2">
+                <a href="{% url 'teacher_view_qr' vehicle._id %}" 
+                   class="bg-purple-500 hover:bg-purple-600 text-white py-2 rounded text-center transition">
+                    <i class="fas fa-qrcode"></i> Xem QR
+                </a>
+                <a href="{% url 'teacher_parking_history' vehicle._id %}" 
+                   class="bg-gray-500 hover:bg-gray-600 text-white py-2 rounded text-center transition">
+                    <i class="fas fa-history"></i> Lịch sử
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-lg p-12 text-center">
+        <i class="fas fa-car text-6xl text-gray-300 mb-4"></i>
+        <h3 class="text-xl font-bold text-gray-600 mb-2">Chưa có xe nào</h3>
+        <p class="text-gray-500 mb-6">Đăng ký xe để sử dụng dịch vụ bãi xe</p>
+        <a href="{% url 'teacher_vehicles_add' %}" 
+           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition">
+            <i class="fas fa-plus"></i> Đăng ký xe đầu tiên
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

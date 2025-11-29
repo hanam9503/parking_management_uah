@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Đăng ký xe{% endblock %}
+
+{% block content %}
+<div class="container mx-auto max-w-2xl">
+    <h1 class="text-3xl font-bold mb-6">
+        <i class="fas fa-car"></i> Đăng ký xe mới
+    </h1>
+    
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- License Plate -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-id-card"></i> Biển số xe *
+                </label>
+                <input type="text" name="license_plate" required
+                       placeholder="VD: 29K1-12345 hoặc 30A12345"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase">
+                <p class="text-xs text-gray-500 mt-1">Nhập biển số không dấu</p>
+            </div>
+            
+            <!-- Vehicle Type -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-list"></i> Loại xe *
+                </label>
+                <select name="vehicle_type" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    {% for type in vehicle_types %}
+                    <option value="{{ type }}">
+                        {% if type == 'motorcycle' %}🏍️ Xe máy
+                        {% elif type == 'car' %}🚗 Ô tô
+                        {% else %}🚲 Xe đạp{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Brand -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-industry"></i> Hãng xe
+                </label>
+                <input type="text" name="brand"
+                       placeholder="VD: Honda, Yamaha, Toyota..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Color -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-palette"></i> Màu xe
+                </label>
+                <input type="text" name="color"
+                       placeholder="VD: Đen, Trắng, Đỏ..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Info Box -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                <p class="text-sm text-blue-700">
+                    <i class="fas fa-info-circle"></i>
+                    Sau khi đăng ký, hệ thống sẽ tự động tạo mã QR cho xe của bạn. 
+                    Bạn có thể in QR và dán lên xe để dễ dàng check-in/out.
+                </p>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="flex space-x-4">
+                <button type="submit" 
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-bold">
+                    <i class="fas fa-save"></i> Đăng ký
+                </button>
+                <a href="{% url 'teacher_vehicles_list' %}" 
+                   class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg text-center transition font-bold">
+                    <i class="fas fa-times"></i> Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

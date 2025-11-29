@@ -6,6 +6,7 @@ from django.contrib import messages
 from users.decorators import login_required, admin_required, teacher_required
 from vehicles.models import Vehicle, QRCode
 from users.models import Teacher
+from parking.models import ParkingHistory
 
 # ============ ADMIN VIEWS ============
 
@@ -158,3 +159,28 @@ def teacher_view_qr(request, vehicle_id):
         'qr_code': qr_code
     }
     return render(request, 'teacher/my_qr.html', context)
+
+
+@login_required
+@teacher_required
+def teacher_parking_history(request, vehicle_id):
+    """Xem lịch sử gửi xe của một phương tiện (Teacher)"""
+    # Load vehicle and check ownership
+    vehicle = Vehicle.get_by_id(vehicle_id)
+    if not vehicle:
+        messages.error(request, 'Không tìm thấy xe')
+        return redirect('teacher_vehicles_list')
+
+    teacher = Teacher.get_by_user_id(request.session['user_id'])
+    if str(vehicle['teacher_id']) != str(teacher['_id']):
+        messages.error(request, 'Bạn không có quyền xem lịch sử xe này')
+        return redirect('teacher_vehicles_list')
+
+    # Fetch history
+    history = ParkingHistory.get_by_vehicle(vehicle_id, limit=100)
+
+    context = {
+        'vehicle': vehicle,
+        'history': history
+    }
+    return render(request, 'teacher/parking_history.html', context)

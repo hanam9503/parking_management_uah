@@ -12,4 +12,5 @@ urlpatterns = [
     path('teacher/vehicles/', views.teacher_vehicles_list, name='teacher_vehicles_list'),
     path('teacher/vehicles/add/', views.teacher_vehicles_form, name='teacher_vehicles_add'),
     path('teacher/vehicles/qr/<str:vehicle_id>/', views.teacher_view_qr, name='teacher_view_qr'),
+    path('teacher/vehicles/history/<str:vehicle_id>/', views.teacher_parking_history, name='teacher_parking_history'),
 ]

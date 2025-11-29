@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Mã QR - {{ vehicle.license_plate }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto max-w-4xl">
+    <h1 class="text-3xl font-bold mb-6">
+        <i class="fas fa-qrcode"></i> Mã QR xe {{ vehicle.license_plate }}
+    </h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- QR Code Card -->
+        <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+            <h2 class="text-xl font-bold mb-6">Mã QR của bạn</h2>
+            
+            {% if qr_code %}
+            <div class="bg-gray-50 p-8 rounded-lg mb-6">
+                <img src="/media/{{ qr_code.qr_image_path }}" 
+                     alt="QR Code {{ vehicle.license_plate }}"
+                     class="w-64 h-64 mx-auto">
+            </div>
+            
+            <div class="space-y-3">
+                <a href="/media/{{ qr_code.qr_image_path }}" 
+                   download="QR_{{ vehicle.license_plate }}.png"
+                   class="block bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition">
+                    <i class="fas fa-download"></i> Tải về
+                </a>
+                <button onclick="window.print()" 
+                        class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition">
+                    <i class="fas fa-print"></i> In QR
+                </button>
+            </div>
+            {% else %}
+            <p class="text-gray-500">Chưa có QR code</p>
+            {% endif %}
+        </div>
+        
+        <!-- Vehicle Info Card -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h2 class="text-xl font-bold mb-6">Thông tin xe</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm text-gray-600">Biển số</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ vehicle.license_plate }}</p>
+                </div>
+                
+                <div>
+                    <p class="text-sm text-gray-600">Loại xe</p>
+                    <p class="font-semibold">
+                        {% if vehicle.vehicle_type == 'motorcycle' %}
+                            <i class="fas fa-motorcycle text-blue-500"></i> Xe máy
+                        {% elif vehicle.vehicle_type == 'car' %}
+                            <i class="fas fa-car text-green-500"></i> Ô tô
+                        {% else %}
+                            <i class="fas fa-bicycle text-yellow-500"></i> Xe đạp
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if vehicle.brand %}
+                <div>
+                    <p class="text-sm text-gray-600">Hãng xe</p>
+                    <p class="font-semibold">{{ vehicle.brand }}</p>
+                </div>
+                {% endif %}
+                
+                {% if vehicle.color %}
+                <div>
+                    <p class="text-sm text-gray-600">Màu</p>
+                    <p class="font-semibold">{{ vehicle.color }}</p>
+                </div>
+                {% endif %}
+                
+                <div>
+                    <p class="text-sm text-gray-600">Trạng thái</p>
+                    <p>
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                            <i class="fas fa-check-circle"></i> Đang hoạt động
+                        </span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="mt-6 bg-blue-50 p-4 rounded-lg">
+                <h3 class="font-bold text-sm mb-2">
+                    <i class="fas fa-lightbulb"></i> Hướng dẫn sử dụng:
+                </h3>
+                <ol class="text-sm text-gray-700 space-y-1 list-decimal list-inside">
+                    <li>Tải hoặc in mã QR</li>
+                    <li>Dán QR lên xe (kính trước hoặc đầu xe)</li>
+                    <li>Bảo vệ quét QR khi vào/ra bãi</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-6 text-center">
+        <a href="{% url 'teacher_vehicles_list' %}" 
+           class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg transition">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .bg-gray-50 img, .bg-gray-50 img * {
+        visibility: visible;
+    }
+    .bg-gray-50 {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+}
+</style>
+{% endblock %}
