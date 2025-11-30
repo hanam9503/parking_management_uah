@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}Chi tiết {{ faculty_name }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <a href="{% url 'admin_faculty_stats' %}" 
+           class="text-blue-600 hover:underline mb-2 inline-block">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+        <h1 class="text-3xl font-bold">
+            <i class="fas fa-building"></i> {{ faculty_name }}
+        </h1>
+    </div>
+    
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-80 mb-1">Giảng viên</p>
+                    <h3 class="text-4xl font-bold">{{ stats.total_teachers }}</h3>
+                </div>
+                <i class="fas fa-users text-5xl opacity-30"></i>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-80 mb-1">Xe đăng ký</p>
+                    <h3 class="text-4xl font-bold">{{ stats.total_vehicles }}</h3>
+                </div>
+                <i class="fas fa-car text-5xl opacity-30"></i>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-80 mb-1">Trong bãi</p>
+                    <h3 class="text-4xl font-bold">{{ stats.vehicles_in_parking }}</h3>
+                </div>
+                <i class="fas fa-parking text-5xl opacity-30"></i>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-80 mb-1">Lượt hôm nay</p>
+                    <h3 class="text-4xl font-bold">{{ stats.today_entries }}</h3>
+                </div>
+                <i class="fas fa-chart-line text-5xl opacity-30"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Vehicle Types Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">
+                <i class="fas fa-chart-pie"></i> Phân loại xe
+            </h2>
+            <canvas id="vehicleTypesChart" height="250"></canvas>
+        </div>
+        
+        <!-- Weekly Trend Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">
+                <i class="fas fa-chart-line"></i> Xu hướng 7 ngày
+            </h2>
+            <canvas id="weeklyTrendChart" height="250"></canvas>
+        </div>
+    </div>
+    
+    <!-- Top Users -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">
+            <i class="fas fa-trophy"></i> Top 10 giảng viên sử dụng nhiều nhất
+        </h2>
+        
+        {% if top_users %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hạng</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giảng viên</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã NV</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bộ môn</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tổng lượt</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for user in top_users %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if forloop.counter == 1 %}
+                                <span class="text-2xl">🥇</span>
+                            {% elif forloop.counter == 2 %}
+                                <span class="text-2xl">🥈</span>
+                            {% elif forloop.counter == 3 %}
+                                <span class="text-2xl">🥉</span>
+                            {% else %}
+                                <span class="text-gray-600 font-semibold">{{ forloop.counter }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="font-semibold text-gray-900">{{ user.user.full_name }}</div>
+                            <div class="text-sm text-gray-500">{{ user.user.email }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            {{ user.teacher.employee_id }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            {{ user.teacher.department }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold">
+                                {{ user.total_entries }} lượt
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-inbox text-4xl mb-2"></i>
+            <p>Chưa có dữ liệu</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Vehicle Types Pie Chart
+const vehicleTypesCtx = document.getElementById('vehicleTypesChart').getContext('2d');
+new Chart(vehicleTypesCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Xe máy', 'Ô tô', 'Xe đạp'],
+        datasets: [{
+            data: [
+                {{ stats.vehicle_types.motorcycle }},
+                {{ stats.vehicle_types.car }},
+                {{ stats.vehicle_types.bicycle }}
+            ],
+            backgroundColor: [
+                'rgb(59, 130, 246)',
+                'rgb(34, 197, 94)',
+                'rgb(234, 179, 8)'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Weekly Trend Line Chart
+const weeklyTrendCtx = document.getElementById('weeklyTrendChart').getContext('2d');
+new Chart(weeklyTrendCtx, {
+    type: 'line',
+    data: {
+        labels: [
+            {% for day in stats.weekly_stats %}'{{ day.day }}'{% if not forloop.last %},{% endif %}{% endfor %}
+        ],
+        datasets: [{
+            label: 'Lượt vào',
+            data: [
+                {% for day in stats.weekly_stats %}{{ day.count }}{% if not forloop.last %},{% endif %}{% endfor %}
+            ],
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

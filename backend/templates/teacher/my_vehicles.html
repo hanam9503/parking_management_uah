@@ -59,11 +59,11 @@
             
             <!-- Actions -->
             <div class="grid grid-cols-2 gap-2">
-                <a href="{% url 'teacher_view_qr' vehicle._id %}" 
+                <a href="{% url 'teacher_view_qr' vehicle.id %}" 
                    class="bg-purple-500 hover:bg-purple-600 text-white py-2 rounded text-center transition">
                     <i class="fas fa-qrcode"></i> Xem QR
                 </a>
-                <a href="{% url 'teacher_parking_history' vehicle._id %}" 
+                <a href="{% url 'teacher_parking_history' vehicle.id %}" 
                    class="bg-gray-500 hover:bg-gray-600 text-white py-2 rounded text-center transition">
                     <i class="fas fa-history"></i> Lịch sử
                 </a>

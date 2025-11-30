@@ -108,6 +108,10 @@ def admin_teachers_list(request):
     try:
         teachers = Teacher.get_with_user_info()
         
+        # Thêm field 'id' từ '_id' để dùng trong template
+        for teacher in teachers:
+            teacher['id'] = str(teacher['_id'])
+        
         context = {
             'teachers': teachers,
             'total_teachers': len(teachers)

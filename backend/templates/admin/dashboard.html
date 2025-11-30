@@ -92,7 +92,7 @@
         <h2 class="text-xl font-bold mb-4">
             <i class="fas fa-tools"></i> Quản lý nhanh
         </h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
             <a href="{% url 'admin_teachers_list' %}" 
                class="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg text-center transition">
                 <i class="fas fa-users text-2xl mb-2"></i>
@@ -113,7 +113,11 @@
                 <i class="fas fa-cog text-2xl mb-2"></i>
                 <p>Cấu hình</p>
             </a>
+            <a href="{% url 'admin_faculty_stats' %}" 
+               class="bg-indigo-500 hover:bg-indigo-600 text-white p-4 rounded-lg text-center transition">
+                <i class="fas fa-chart-bar text-2xl mb-2"></i>
+                <p>Thống kê</p>
+            </a>
         </div>
     </div>
-</div>
 {% endblock %}

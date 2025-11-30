@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}Thống kê theo Khoa{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <h1 class="text-3xl font-bold mb-6">
+        <i class="fas fa-chart-bar"></i> Thống kê theo Khoa
+    </h1>
+    
+    <!-- System Overview -->
+    <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg p-6 mb-6">
+        <h2 class="text-2xl font-bold mb-4">
+            <i class="fas fa-university"></i> Tổng quan hệ thống
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                <p class="text-sm mb-1">Giảng viên</p>
+                <p class="text-3xl font-bold">{{ system_overview.total_teachers }}</p>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                <p class="text-sm mb-1">Tổng xe</p>
+                <p class="text-3xl font-bold">{{ system_overview.total_vehicles }}</p>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                <p class="text-sm mb-1">Trong bãi</p>
+                <p class="text-3xl font-bold">{{ system_overview.current_inside }}</p>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                <p class="text-sm mb-1">Lượt hôm nay</p>
+                <p class="text-3xl font-bold">{{ system_overview.today_entries }}</p>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                <p class="text-sm mb-1">Tổng lượt</p>
+                <p class="text-3xl font-bold">{{ system_overview.total_entries }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats by Faculty -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        {% for stat in all_stats %}
+        <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition">
+            <div class="p-6">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        {{ stat.faculty_name }}
+                    </h3>
+                    <a href="{% url 'admin_faculty_detail' stat.faculty_name %}" 
+                       class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-blue-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 mb-1">Giảng viên</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ stat.total_teachers }}</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 mb-1">Xe đăng ký</p>
+                        <p class="text-2xl font-bold text-green-600">{{ stat.total_vehicles }}</p>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 mb-1">Đang trong bãi</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ stat.vehicles_in_parking }}</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 mb-1">Lượt hôm nay</p>
+                        <p class="text-2xl font-bold text-orange-600">{{ stat.today_entries }}</p>
+                    </div>
+                </div>
+                
+                <!-- Vehicle Types -->
+                <div class="border-t pt-4">
+                    <p class="text-sm text-gray-600 mb-2">Phân loại xe:</p>
+                    <div class="flex justify-between text-sm">
+                        <span>
+                            <i class="fas fa-motorcycle text-blue-500"></i>
+                            {{ stat.vehicle_types.motorcycle }}
+                        </span>
+                        <span>
+                            <i class="fas fa-car text-green-500"></i>
+                            {{ stat.vehicle_types.car }}
+                        </span>
+                        <span>
+                            <i class="fas fa-bicycle text-yellow-500"></i>
+                            {{ stat.vehicle_types.bicycle }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Comparison Charts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Top by Teachers -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">
+                <i class="fas fa-users"></i> Khoa có nhiều GV nhất
+            </h2>
+            <div class="space-y-3">
+                {% for stat in comparison.by_teachers|slice:":5" %}
+                <div class="flex items-center">
+                    <div class="flex-1">
+                        <p class="font-semibold text-sm">{{ stat.faculty_name }}</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div class="bg-blue-600 h-2 rounded-full" 
+                                 style="width: {% widthratio stat.total_teachers comparison.by_teachers.0.total_teachers 100 %}%"></div>
+                        </div>
+                    </div>
+                    <span class="ml-4 font-bold text-blue-600">{{ stat.total_teachers }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Top by Vehicles -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">
+                <i class="fas fa-car"></i> Khoa có nhiều xe nhất
+            </h2>
+            <div class="space-y-3">
+                {% for stat in comparison.by_vehicles|slice:":5" %}
+                <div class="flex items-center">
+                    <div class="flex-1">
+                        <p class="font-semibold text-sm">{{ stat.faculty_name }}</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div class="bg-green-600 h-2 rounded-full" 
+                                 style="width: {% widthratio stat.total_vehicles comparison.by_vehicles.0.total_vehicles 100 %}%"></div>
+                        </div>
+                    </div>
+                    <span class="ml-4 font-bold text-green-600">{{ stat.total_vehicles }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Top by Today Entries -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">
+                <i class="fas fa-chart-line"></i> Khoa hoạt động nhiều nhất hôm nay
+            </h2>
+            <div class="space-y-3">
+                {% for stat in comparison.by_today|slice:":5" %}
+                <div class="flex items-center">
+                    <div class="flex-1">
+                        <p class="font-semibold text-sm">{{ stat.faculty_name }}</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div class="bg-orange-600 h-2 rounded-full" 
+                                 style="width: {% if comparison.by_today.0.today_entries > 0 %}{% widthratio stat.today_entries comparison.by_today.0.today_entries 100 %}{% else %}0{% endif %}%"></div>
+                        </div>
+                    </div>
+                    <span class="ml-4 font-bold text-orange-600">{{ stat.today_entries }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Top by Current Parking -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">
+                <i class="fas fa-parking"></i> Khoa có nhiều xe trong bãi nhất
+            </h2>
+            <div class="space-y-3">
+                {% for stat in comparison.by_parking|slice:":5" %}
+                <div class="flex items-center">
+                    <div class="flex-1">
+                        <p class="font-semibold text-sm">{{ stat.faculty_name }}</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div class="bg-purple-600 h-2 rounded-full" 
+                                 style="width: {% if comparison.by_parking.0.vehicles_in_parking > 0 %}{% widthratio stat.vehicles_in_parking comparison.by_parking.0.vehicles_in_parking 100 %}{% else %}0{% endif %}%"></div>
+                        </div>
+                    </div>
+                    <span class="ml-4 font-bold text-purple-600">{{ stat.vehicles_in_parking }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

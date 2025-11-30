@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'users',
     'vehicles',
     'parking', 
+    'university',
 ]
 
 MIDDLEWARE = [

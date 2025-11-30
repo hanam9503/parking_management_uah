@@ -16,6 +16,10 @@ def admin_vehicles_list(request):
     """Danh sách xe (Admin)"""
     vehicles = Vehicle.get_with_teacher_info()
     
+    # Thêm field 'id' từ '_id' để dùng trong template
+    for vehicle in vehicles:
+        vehicle['id'] = str(vehicle['_id'])
+    
     context = {
         'vehicles': vehicles,
         'total_vehicles': len(vehicles)
@@ -28,6 +32,10 @@ def admin_vehicles_form(request, vehicle_id=None):
     """Form thêm/sửa xe (Admin)"""
     vehicle = None
     teachers = Teacher.get_with_user_info()
+    
+    # Thêm field 'id' từ '_id' để dùng trong template
+    for teacher in teachers:
+        teacher['id'] = str(teacher['_id'])
     
     if vehicle_id:
         vehicle_list = Vehicle.get_with_teacher_info(vehicle_id)
@@ -94,8 +102,9 @@ def teacher_vehicles_list(request):
     teacher = Teacher.get_by_user_id(request.session['user_id'])
     vehicles = Vehicle.get_by_teacher(str(teacher['_id']))
     
-    # Get QR codes
+    # Get QR codes và thêm field 'id' từ '_id' để dùng trong template
     for vehicle in vehicles:
+        vehicle['id'] = str(vehicle['_id'])
         qr_code = QRCode.get_by_vehicle(str(vehicle['_id']))
         vehicle['qr_code'] = qr_code
     

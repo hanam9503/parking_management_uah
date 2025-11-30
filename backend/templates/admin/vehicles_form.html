@@ -22,7 +22,7 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     <option value="">-- Chọn giảng viên --</option>
                     {% for teacher in teachers %}
-                    <option value="{{ teacher._id }}">
+                    <option value="{{ teacher.id }}">
                         {{ teacher.user.full_name }} - {{ teacher.faculty }}
                     </option>
                     {% endfor %}
