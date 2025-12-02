@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+
+{% block title %}Security Live View{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">
+            <i class="fas fa-shield-alt"></i> Security - Live Camera View
+        </h1>
+        <div class="flex items-center gap-4">
+            <span id="live-indicator" class="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full animate-pulse">
+                <span class="w-3 h-3 bg-white rounded-full"></span>
+                LIVE
+            </span>
+            <span id="current-time" class="text-gray-600 font-mono text-lg"></span>
+        </div>
+    </div>
+    
+    <!-- System Status Bar -->
+    <div class="bg-gray-800 text-white rounded-lg p-4 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="text-center">
+                <p class="text-sm opacity-70">Camera 1</p>
+                <p class="text-xl font-bold" id="status-cam1">
+                    {% if status.camera_1.active %}
+                    <span class="text-green-400">● ONLINE</span>
+                    {% else %}
+                    <span class="text-red-400">● OFFLINE</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm opacity-70">Camera 2</p>
+                <p class="text-xl font-bold" id="status-cam2">
+                    {% if status.camera_2.active %}
+                    <span class="text-green-400">● ONLINE</span>
+                    {% else %}
+                    <span class="text-red-400">● OFFLINE</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm opacity-70">Check-ins Today</p>
+                <p class="text-xl font-bold text-blue-400" id="checkin-count">0</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm opacity-70">Check-outs Today</p>
+                <p class="text-xl font-bold text-purple-400" id="checkout-count">0</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Split Screen - 2 Cameras -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <!-- Camera 1 - Check-in -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-blue-600 text-white p-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold">
+                    <i class="fas fa-sign-in-alt"></i> Camera 1 - CHECK-IN
+                </h2>
+                <span class="bg-blue-800 px-3 py-1 rounded-full text-sm" id="detection-cam1">
+                    Waiting...
+                </span>
+            </div>
+            <div class="relative">
+                <img src="{% url 'stream_camera_1' %}" 
+                     class="w-full h-96 object-contain bg-gray-900" 
+                     alt="Camera 1 Feed"
+                     id="camera1-feed">
+                
+                <!-- Overlay Info -->
+                <div class="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-4 py-2 rounded">
+                    <p class="text-xs opacity-70">CAMERA 1</p>
+                    <p class="font-mono text-sm" id="timestamp-cam1">--:--:--</p>
+                </div>
+                
+                <!-- Detection Overlay -->
+                <div id="detection-overlay-1" class="absolute top-4 right-4 bg-green-600 text-white px-4 py-2 rounded hidden">
+                    <p class="text-xs">DETECTED</p>
+                    <p class="font-bold" id="plate-detected-1">--</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Camera 2 - Check-out -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-purple-600 text-white p-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold">
+                    <i class="fas fa-sign-out-alt"></i> Camera 2 - CHECK-OUT
+                </h2>
+                <span class="bg-purple-800 px-3 py-1 rounded-full text-sm" id="detection-cam2">
+                    Waiting...
+                </span>
+            </div>
+            <div class="relative">
+                <img src="{% url 'stream_camera_2' %}" 
+                     class="w-full h-96 object-contain bg-gray-900" 
+                     alt="Camera 2 Feed"
+                     id="camera2-feed">
+                
+                <!-- Overlay Info -->
+                <div class="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-4 py-2 rounded">
+                    <p class="text-xs opacity-70">CAMERA 2</p>
+                    <p class="font-mono text-sm" id="timestamp-cam2">--:--:--</p>
+                </div>
+                
+                <!-- Detection Overlay -->
+                <div id="detection-overlay-2" class="absolute top-4 right-4 bg-green-600 text-white px-4 py-2 rounded hidden">
+                    <p class="text-xs">DETECTED</p>
+                    <p class="font-bold" id="plate-detected-2">--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Detections Log -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">
+            <i class="fas fa-history"></i> Recent Detections (Live)
+        </h2>
+        
+        <div id="detection-log" class="space-y-2 max-h-96 overflow-y-auto">
+            <div class="text-center text-gray-400 py-8">
+                <i class="fas fa-search text-4xl mb-2"></i>
+                <p>Waiting for detections...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="mt-6 flex gap-4">
+        <a href="{% url 'security_dashboard' %}" 
+           class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <button onclick="toggleFullscreen()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg">
+            <i class="fas fa-expand"></i> Fullscreen
+        </button>
+        <button onclick="location.reload()" 
+                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg">
+            <i class="fas fa-sync"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<script>
+// Update clock
+setInterval(updateClock, 1000);
+
+function updateClock() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('vi-VN');
+    document.getElementById('current-time').textContent = timeStr;
+    document.getElementById('timestamp-cam1').textContent = timeStr;
+    document.getElementById('timestamp-cam2').textContent = timeStr;
+}
+
+// Update status
+setInterval(updateStatus, 2000);
+
+function updateStatus() {
+    fetch('{% url "api_camera_status" %}')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Camera 1
+                const cam1Status = data.status.camera_1.active ? 
+                    '<span class="text-green-400">● ONLINE</span>' : 
+                    '<span class="text-red-400">● OFFLINE</span>';
+                document.getElementById('status-cam1').innerHTML = cam1Status;
+                
+                // Camera 2
+                const cam2Status = data.status.camera_2.active ? 
+                    '<span class="text-green-400">● ONLINE</span>' : 
+                    '<span class="text-red-400">● OFFLINE</span>';
+                document.getElementById('status-cam2').innerHTML = cam2Status;
+            }
+        })
+        .catch(err => console.error('Status error:', err));
+}
+
+// Simulate detection updates (Replace with real WebSocket/SSE in production)
+let detectionCount = 0;
+
+function addDetectionLog(cameraId, plate, confidence) {
+    const logContainer = document.getElementById('detection-log');
+    
+    // Remove placeholder
+    if (logContainer.querySelector('.text-gray-400')) {
+        logContainer.innerHTML = '';
+    }
+    
+    detectionCount++;
+    
+    const logItem = document.createElement('div');
+    logItem.className = 'border-l-4 border-blue-500 bg-blue-50 p-3 rounded flex justify-between items-center';
+    logItem.innerHTML = `
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">${cameraId === 'camera_1' ? '🚗→' : '🚗←'}</span>
+            <div>
+                <p class="font-bold text-blue-600">${plate}</p>
+                <p class="text-xs text-gray-600">
+                    ${cameraId === 'camera_1' ? 'Check-in' : 'Check-out'} | 
+                    Confidence: ${(confidence * 100).toFixed(1)}%
+                </p>
+            </div>
+        </div>
+        <span class="text-xs text-gray-500">${new Date().toLocaleTimeString()}</span>
+    `;
+    
+    // Add to top
+    logContainer.insertBefore(logItem, logContainer.firstChild);
+    
+    // Keep only last 20 items
+    while (logContainer.children.length > 20) {
+        logContainer.removeChild(logContainer.lastChild);
+    }
+    
+    // Update counters
+    if (cameraId === 'camera_1') {
+        const count = parseInt(document.getElementById('checkin-count').textContent) + 1;
+        document.getElementById('checkin-count').textContent = count;
+    } else {
+        const count = parseInt(document.getElementById('checkout-count').textContent) + 1;
+        document.getElementById('checkout-count').textContent = count;
+    }
+    
+    // Show detection overlay
+    showDetectionOverlay(cameraId, plate);
+}
+
+function showDetectionOverlay(cameraId, plate) {
+    const overlayId = cameraId === 'camera_1' ? 'detection-overlay-1' : 'detection-overlay-2';
+    const plateId = cameraId === 'camera_1' ? 'plate-detected-1' : 'plate-detected-2';
+    
+    const overlay = document.getElementById(overlayId);
+    document.getElementById(plateId).textContent = plate;
+    
+    overlay.classList.remove('hidden');
+    
+    setTimeout(() => {
+        overlay.classList.add('hidden');
+    }, 5000);
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// Initialize
+updateClock();
+updateStatus();
+
+// Demo: Simulate random detections for testing
+// Remove this in production and use real detection events
+setInterval(() => {
+    if (Math.random() > 0.7) {
+        const camera = Math.random() > 0.5 ? 'camera_1' : 'camera_2';
+        const plate = `29${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 9)}-${String(Math.floor(Math.random() * 90000) + 10000)}`;
+        const confidence = 0.85 + Math.random() * 0.14;
+        
+        addDetectionLog(camera, plate, confidence);
+    }
+}, 10000);
+</script>
+
+<style>
+/* Fullscreen optimizations */
+:fullscreen {
+    background: #000;
+}
+
+:fullscreen .container {
+    max-width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+:fullscreen .grid {
+    flex: 1;
+}
+
+:fullscreen img {
+    height: calc(50vh - 100px);
+}
+</style>
+{% endblock %}

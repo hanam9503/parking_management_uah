@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+
+{% block title %}Camera Simulation Control{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <h1 class="text-3xl font-bold mb-6">
+        <i class="fas fa-video"></i> Camera Simulation Control Panel
+    </h1>
+    
+    <!-- Status Overview -->
+    <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg p-6 mb-6">
+        <h2 class="text-2xl font-bold mb-4">System Status</h2>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-80">Camera 1 (Check-in)</p>
+                        <p class="text-2xl font-bold" id="status-camera-1">
+                            {% if status.camera_1.active %}🟢 ONLINE{% else %}🔴 OFFLINE{% endif %}
+                        </p>
+                    </div>
+                    <i class="fas fa-sign-in-alt text-4xl opacity-30"></i>
+                </div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-80">Camera 2 (Check-out)</p>
+                        <p class="text-2xl font-bold" id="status-camera-2">
+                            {% if status.camera_2.active %}🟢 ONLINE{% else %}🔴 OFFLINE{% endif %}
+                        </p>
+                    </div>
+                    <i class="fas fa-sign-out-alt text-4xl opacity-30"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Camera Controls -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Camera 1 Control -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-bold mb-4 text-blue-600">
+                <i class="fas fa-video"></i> Camera 1 - Check-in
+            </h3>
+            
+            <!-- Video Selection -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Select Video</label>
+                <select id="video-select-1" class="w-full px-4 py-2 border rounded-lg">
+                    <option value="">-- Select Video --</option>
+                    {% for video in videos_checkin %}
+                    <option value="{{ video }}" {% if status.camera_1.current_video == video %}selected{% endif %}>
+                        {{ video }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Upload Video -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Upload New Video</label>
+                <div class="flex gap-2">
+                    <input type="file" id="upload-video-1" accept="video/mp4" class="flex-1 px-4 py-2 border rounded-lg">
+                    <button onclick="uploadVideo('checkin')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Control Buttons -->
+            <div class="flex gap-2">
+                <button onclick="startCamera('camera_1')" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold">
+                    <i class="fas fa-play"></i> START
+                </button>
+                <button onclick="stopCamera('camera_1')" 
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold">
+                    <i class="fas fa-stop"></i> STOP
+                </button>
+            </div>
+            
+            <!-- Preview -->
+            <div class="mt-4 bg-gray-900 rounded-lg overflow-hidden">
+                <img id="preview-camera-1" src="{% url 'stream_camera_1' %}" 
+                     class="w-full h-64 object-contain" alt="Camera 1">
+            </div>
+        </div>
+        
+        <!-- Camera 2 Control -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-xl font-bold mb-4 text-purple-600">
+                <i class="fas fa-video"></i> Camera 2 - Check-out
+            </h3>
+            
+            <!-- Video Selection -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Select Video</label>
+                <select id="video-select-2" class="w-full px-4 py-2 border rounded-lg">
+                    <option value="">-- Select Video --</option>
+                    {% for video in videos_checkout %}
+                    <option value="{{ video }}" {% if status.camera_2.current_video == video %}selected{% endif %}>
+                        {{ video }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Upload Video -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Upload New Video</label>
+                <div class="flex gap-2">
+                    <input type="file" id="upload-video-2" accept="video/mp4" class="flex-1 px-4 py-2 border rounded-lg">
+                    <button onclick="uploadVideo('checkout')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Control Buttons -->
+            <div class="flex gap-2">
+                <button onclick="startCamera('camera_2')" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold">
+                    <i class="fas fa-play"></i> START
+                </button>
+                <button onclick="stopCamera('camera_2')" 
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold">
+                    <i class="fas fa-stop"></i> STOP
+                </button>
+            </div>
+            
+            <!-- Preview -->
+            <div class="mt-4 bg-gray-900 rounded-lg overflow-hidden">
+                <img id="preview-camera-2" src="{% url 'stream_camera_2' %}" 
+                     class="w-full h-64 object-contain" alt="Camera 2">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Image Injection Control -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-bold mb-4 text-orange-600">
+            <i class="fas fa-image"></i> Image Injection - Simulate Vehicle Entry/Exit
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <!-- Upload Image -->
+            <div>
+                <label class="block text-sm font-medium mb-2">Upload Image</label>
+                <div class="flex flex-col gap-2">
+                    <input type="file" id="upload-image" accept="image/*" class="px-4 py-2 border rounded-lg">
+                    <button onclick="uploadImage()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Select Image -->
+            <div>
+                <label class="block text-sm font-medium mb-2">Select Image</label>
+                <select id="image-select" class="w-full px-4 py-2 border rounded-lg">
+                    <option value="">-- Select Image --</option>
+                    {% for image in images %}
+                    <option value="{{ image }}">{{ image }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Select Target Camera -->
+            <div>
+                <label class="block text-sm font-medium mb-2">Target Camera</label>
+                <select id="target-camera" class="w-full px-4 py-2 border rounded-lg">
+                    <option value="camera_1">Camera 1 (Check-in)</option>
+                    <option value="camera_2">Camera 2 (Check-out)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Duration -->
+            <div>
+                <label class="block text-sm font-medium mb-2">Display Duration (seconds)</label>
+                <input type="number" id="inject-duration" value="5" min="1" max="30" 
+                       class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            
+            <!-- Inject Button -->
+            <div class="flex items-end">
+                <button onclick="injectImage()" 
+                        class="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-bold">
+                    <i class="fas fa-syringe"></i> INJECT IMAGE
+                </button>
+            </div>
+        </div>
+        
+        <!-- Info Box -->
+        <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-500 p-4">
+            <p class="text-sm text-yellow-800">
+                <i class="fas fa-info-circle"></i>
+                <strong>How it works:</strong> Upload or select an image containing a vehicle with license plate. 
+                Choose target camera and duration. Click INJECT to temporarily replace the live feed with your image 
+                for testing detection system.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Quick Links -->
+    <div class="mt-6 flex gap-4">
+        <a href="{% url 'security_live_view' %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg">
+            <i class="fas fa-eye"></i> View Security Dashboard
+        </a>
+        <a href="{% url 'admin_dashboard' %}" 
+           class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg">
+            <i class="fas fa-arrow-left"></i> Back to Admin
+        </a>
+    </div>
+</div>
+
+<script>
+// Auto-refresh status every 2 seconds
+setInterval(updateStatus, 2000);
+
+function updateStatus() {
+    fetch('{% url "api_camera_status" %}')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Update Camera 1 status
+                const cam1Status = data.status.camera_1.active ? '🟢 ONLINE' : '🔴 OFFLINE';
+                document.getElementById('status-camera-1').textContent = cam1Status;
+                
+                // Update Camera 2 status
+                const cam2Status = data.status.camera_2.active ? '🟢 ONLINE' : '🔴 OFFLINE';
+                document.getElementById('status-camera-2').textContent = cam2Status;
+            }
+        })
+        .catch(err => console.error('Status update error:', err));
+}
+
+function startCamera(cameraId) {
+    const videoSelect = document.getElementById(cameraId === 'camera_1' ? 'video-select-1' : 'video-select-2');
+    const videoFilename = videoSelect.value;
+    
+    if (!videoFilename) {
+        alert('Please select a video first');
+        return;
+    }
+    
+    fetch('{% url "api_camera_start" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            camera_id: cameraId,
+            video_filename: videoFilename
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Camera started successfully', 'success');
+            updateStatus();
+        } else {
+            showToast('Failed: ' + data.error, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        showToast('Request failed', 'error');
+    });
+}
+
+function stopCamera(cameraId) {
+    fetch('{% url "api_camera_stop" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            camera_id: cameraId
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Camera stopped', 'success');
+            updateStatus();
+        } else {
+            showToast('Failed: ' + data.error, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        showToast('Request failed', 'error');
+    });
+}
+
+function uploadVideo(cameraType) {
+    const fileInput = document.getElementById(cameraType === 'checkin' ? 'upload-video-1' : 'upload-video-2');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a video file');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('camera_type', cameraType);
+    formData.append('video', file);
+    
+    fetch('{% url "admin_upload_video" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Video uploaded: ' + data.filename, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Upload failed: ' + data.error, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        showToast('Upload failed', 'error');
+    });
+}
+
+function uploadImage() {
+    const fileInput = document.getElementById('upload-image');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select an image file');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    fetch('{% url "admin_upload_image" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Image uploaded: ' + data.filename, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('Upload failed: ' + data.error, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        showToast('Upload failed', 'error');
+    });
+}
+
+function injectImage() {
+    const imageSelect = document.getElementById('image-select');
+    const targetCamera = document.getElementById('target-camera');
+    const duration = parseFloat(document.getElementById('inject-duration').value);
+    
+    const imageFilename = imageSelect.value;
+    const cameraId = targetCamera.value;
+    
+    if (!imageFilename) {
+        alert('Please select an image');
+        return;
+    }
+    
+    fetch('{% url "api_inject_image" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            camera_id: cameraId,
+            image_filename: imageFilename,
+            duration: duration
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Image injected to ${cameraId} for ${duration}s`, 'success');
+        } else {
+            showToast('Injection failed: ' + data.error, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        showToast('Injection failed', 'error');
+    });
+}
+
+function showToast(message, type) {
+    // Use existing toast function or create simple alert
+    alert(message);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
