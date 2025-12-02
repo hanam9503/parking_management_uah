@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block title %}Nhập thủ công{% endblock %}
+
+{% block content %}
+<div class="container mx-auto max-w-4xl">
+    <div class="mb-6">
+        <a href="{% url 'security_dashboard' %}" 
+           class="text-blue-600 hover:underline mb-2 inline-block">
+            <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+        </a>
+        <h1 class="text-3xl font-bold">
+            <i class="fas fa-keyboard"></i> Check-in/out thủ công
+        </h1>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Search Form -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">
+                    <i class="fas fa-search"></i> Tìm kiếm xe
+                </h2>
+                
+                <form method="GET" id="searchForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Biển số xe *
+                        </label>
+                        <input type="text" name="license_plate" 
+                               value="{{ license_plate }}"
+                               placeholder="VD: 29K1-12345"
+                               required
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg uppercase"
+                               autofocus>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-info-circle"></i> Nhập biển số không dấu
+                        </p>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button type="submit" 
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-bold">
+                            <i class="fas fa-search"></i> Tìm kiếm
+                        </button>
+                        <button type="button" 
+                                onclick="document.querySelector('input[name=license_plate]').value=''; document.querySelector('input[name=license_plate]').focus();"
+                                class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg transition font-bold">
+                            <i class="fas fa-eraser"></i> Xóa
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Search Result -->
+            {% if searched %}
+                {% if vehicle %}
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-green-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-green-600">
+                            <i class="fas fa-check-circle"></i> Tìm thấy xe
+                        </h2>
+                        {% if is_inside %}
+                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold">
+                            <i class="fas fa-parking"></i> Đang trong bãi
+                        </span>
+                        {% else %}
+                        <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-semibold">
+                            <i class="fas fa-circle"></i> Ngoài bãi
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Vehicle Info -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Biển số</p>
+                            <p class="text-2xl font-bold text-blue-600">{{ vehicle.license_plate }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Loại xe</p>
+                            <p class="font-semibold">
+                                {% if vehicle.vehicle_type == 'motorcycle' %}
+                                    <i class="fas fa-motorcycle text-blue-500"></i> Xe máy
+                                {% elif vehicle.vehicle_type == 'car' %}
+                                    <i class="fas fa-car text-green-500"></i> Ô tô
+                                {% else %}
+                                    <i class="fas fa-bicycle text-yellow-500"></i> Xe đạp
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Chủ xe</p>
+                            <p class="font-semibold">{{ vehicle.teacher.user.full_name }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Khoa</p>
+                            <p class="font-semibold">{{ vehicle.teacher.faculty }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        {% if is_inside %}
+                        <form method="POST" action="{% url 'security_checkout' vehicle.id %}" class="flex-1">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg transition font-bold">
+                                <i class="fas fa-sign-out-alt"></i> Check-out
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="POST" action="#" class="flex-1">
+                            {% csrf_token %}
+                            <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
+                            <button type="submit" 
+                                    class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition font-bold">
+                                <i class="fas fa-sign-in-alt"></i> Check-in
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        <button type="button" 
+                                onclick="window.location.href='{% url 'security_manual_entry' %}'"
+                                class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg transition font-bold">
+                            <i class="fas fa-times"></i> Hủy
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-white rounded-lg shadow-lg p-6 border-2 border-red-500">
+                    <div class="text-center py-8">
+                        <i class="fas fa-exclamation-circle text-6xl text-red-500 mb-4"></i>
+                        <h3 class="text-xl font-bold text-red-600 mb-2">Không tìm thấy xe</h3>
+                        <p class="text-gray-600 mb-4">
+                            Biển số <strong class="text-red-600">{{ license_plate }}</strong> không có trong hệ thống
+                        </p>
+                        <button onclick="document.querySelector('input[name=license_plate]').value=''; document.querySelector('input[name=license_plate]').focus();"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+                            <i class="fas fa-search"></i> Tìm lại
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Quick Guide -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-lg p-6 sticky top-4">
+                <h3 class="font-bold mb-4">
+                    <i class="fas fa-question-circle"></i> Hướng dẫn
+                </h3>
+                
+                <div class="space-y-3 text-sm">
+                    <div class="bg-blue-50 p-3 rounded">
+                        <p class="font-semibold text-blue-800 mb-1">Check-in</p>
+                        <p class="text-blue-700">Nhập biển số → Tìm → Nhấn "Check-in"</p>
+                    </div>
+                    
+                    <div class="bg-red-50 p-3 rounded">
+                        <p class="font-semibold text-red-800 mb-1">Check-out</p>
+                        <p class="text-red-700">Nhập biển số → Tìm → Nhấn "Check-out"</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t">
+                    <p class="text-sm text-gray-600 mb-2">
+                        <i class="fas fa-lightbulb text-yellow-500"></i> Mẹo
+                    </p>
+                    <ul class="text-xs text-gray-600 space-y-1">
+                        <li>✓ Nhập biển số không dấu</li>
+                        <li>✓ Có thể có hoặc không có dấu "-"</li>
+                        <li>✓ Không phân biệt chữ hoa/thường</li>
+                    </ul>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t">
+                    <a href="{% url 'security_scan_qr' %}" 
+                       class="block text-center bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition">
+                        <i class="fas fa-qrcode"></i> Quét QR thay thế
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Manual Entries -->
+    <div class="mt-6 bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">
+            <i class="fas fa-history"></i> Nhập gần đây
+        </h2>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Biển số</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giảng viên</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bảo vệ</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>Chưa có dữ liệu nhập thủ công</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-format license plate
+document.querySelector('input[name="license_plate"]').addEventListener('input', function(e) {
+    let value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    e.target.value = value;
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // F2: Focus search
+    if (e.key === 'F2') {
+        e.preventDefault();
+        document.querySelector('input[name="license_plate"]').focus();
+    }
+    
+    // F3: Clear and focus
+    if (e.key === 'F3') {
+        e.preventDefault();
+        document.querySelector('input[name="license_plate"]').value = '';
+        document.querySelector('input[name="license_plate"]').focus();
+    }
+});
+</script>
+{% endblock %}

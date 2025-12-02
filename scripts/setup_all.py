@@ -4,7 +4,7 @@ Setup script - Chạy tất cả các bước khởi tạo
 """
 import sys
 import os
-
+sys.stdout.reconfigure(encoding='utf-8')     
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'parking_project.settings')
 

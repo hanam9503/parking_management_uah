@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'vehicles',
     'parking', 
     'university',
+    'camera_ai',
 ]
 
 MIDDLEWARE = [

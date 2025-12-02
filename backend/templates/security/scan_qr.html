@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}Quét QR Code{% endblock %}
+
+{% block content %}
+<div class="container mx-auto max-w-4xl">
+    <div class="mb-6">
+        <a href="{% url 'security_dashboard' %}" 
+           class="text-blue-600 hover:underline mb-2 inline-block">
+            <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+        </a>
+        <h1 class="text-3xl font-bold">
+            <i class="fas fa-qrcode"></i> Quét QR Code
+        </h1>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Scanner Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">
+                <i class="fas fa-camera"></i> Máy quét
+            </h2>
+            
+            <!-- QR Scanner Demo -->
+            <div class="relative bg-gray-800 rounded-lg p-8 mb-4 qr-scanner" style="height: 300px;">
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center text-white">
+                        <i class="fas fa-qrcode text-6xl mb-4 opacity-50"></i>
+                        <p class="text-lg mb-2">Đưa mã QR vào khung hình</p>
+                        <p class="text-sm opacity-70">Hệ thống sẽ tự động nhận diện</p>
+                    </div>
+                </div>
+                
+                <!-- Scanning Line Animation -->
+                <div class="scan-line"></div>
+                
+                <!-- Corner Markers -->
+                <div class="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-green-500"></div>
+                <div class="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-green-500"></div>
+                <div class="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-green-500"></div>
+                <div class="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-green-500"></div>
+            </div>
+            
+            <!-- Manual Input Alternative -->
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <p class="text-sm text-blue-800 mb-2">
+                    <i class="fas fa-info-circle"></i> Không quét được?
+                </p>
+                <form method="POST" action="{% url 'security_manual_entry' %}">
+                    {% csrf_token %}
+                    <div class="flex gap-2">
+                        <input type="text" name="license_plate" 
+                               placeholder="Nhập biển số thủ công"
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <button type="submit" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                            Tìm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Instructions Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">
+                <i class="fas fa-book"></i> Hướng dẫn sử dụng
+            </h2>
+            
+            <div class="space-y-4">
+                <!-- Step 1 -->
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                        1
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold mb-1">Định vị mã QR</h3>
+                        <p class="text-sm text-gray-600">
+                            Đưa mã QR trên xe vào giữa khung hình quét. Giữ khoảng cách 10-30cm.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold">
+                        2
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold mb-1">Đợi xác nhận</h3>
+                        <p class="text-sm text-gray-600">
+                            Hệ thống sẽ tự động nhận diện và hiển thị thông tin xe. Kiểm tra kỹ trước khi xác nhận.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold">
+                        3
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold mb-1">Check-in/out</h3>
+                        <p class="text-sm text-gray-600">
+                            Nhấn nút xác nhận để hoàn tất check-in hoặc check-out. Hệ thống sẽ cập nhật tự động.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tips -->
+            <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                <h3 class="font-semibold text-yellow-800 mb-2">
+                    <i class="fas fa-lightbulb"></i> Mẹo sử dụng
+                </h3>
+                <ul class="text-sm text-yellow-700 space-y-1">
+                    <li>✓ Đảm bảo mã QR không bị nhăn, rách</li>
+                    <li>✓ Quét ở nơi có ánh sáng đủ</li>
+                    <li>✓ Giữ điện thoại/máy quét ổn định</li>
+                    <li>✓ Nếu lỗi, thử nhập biển số thủ công</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Scans -->
+    <div class="mt-6 bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">
+            <i class="fas fa-history"></i> Quét gần đây
+        </h2>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Biển số</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giảng viên</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- Demo data - Replace with real data -->
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            {{ now|date:"H:i" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="font-bold text-blue-600">--</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            --
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="text-gray-400">Chưa có dữ liệu</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm">
+                                --
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="mt-6 grid grid-cols-3 gap-4">
+        <div class="bg-blue-100 rounded-lg p-4 text-center">
+            <i class="fas fa-qrcode text-3xl text-blue-600 mb-2"></i>
+            <p class="text-2xl font-bold text-blue-600" id="today-scans">0</p>
+            <p class="text-sm text-blue-700">Quét hôm nay</p>
+        </div>
+        
+        <div class="bg-green-100 rounded-lg p-4 text-center">
+            <i class="fas fa-check-circle text-3xl text-green-600 mb-2"></i>
+            <p class="text-2xl font-bold text-green-600" id="successful-scans">0</p>
+            <p class="text-sm text-green-700">Thành công</p>
+        </div>
+        
+        <div class="bg-red-100 rounded-lg p-4 text-center">
+            <i class="fas fa-times-circle text-3xl text-red-600 mb-2"></i>
+            <p class="text-2xl font-bold text-red-600" id="failed-scans">0</p>
+            <p class="text-sm text-red-700">Thất bại</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Simulate QR scanning
+document.addEventListener('DOMContentLoaded', function() {
+    const scanner = document.querySelector('.qr-scanner');
+    
+    // Add click event to simulate scan (for demo)
+    scanner.addEventListener('click', function() {
+        // Show loading
+        this.style.borderColor = '#10b981';
+        
+        setTimeout(() => {
+            alert('Demo: QR Code quét thành công!\n\nTrong môi trường thực tế, tính năng này sẽ sử dụng camera để quét mã QR thật.');
+            this.style.borderColor = '';
+        }, 1000);
+    });
+    
+    // Update stats with animation
+    animateCounter('today-scans', 15);
+    animateCounter('successful-scans', 14);
+    animateCounter('failed-scans', 1);
+});
+
+function animateCounter(id, target) {
+    const element = document.getElementById(id);
+    let current = 0;
+    const increment = target / 50;
+    
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            element.textContent = target;
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.floor(current);
+        }
+    }, 20);
+}
+</script>
+{% endblock %}

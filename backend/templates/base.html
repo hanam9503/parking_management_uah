@@ -12,6 +12,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-gray-50">
@@ -27,8 +30,24 @@
         {% block content %}{% endblock %}
     </div>
     
+    <!-- Footer -->
+    {% if request.session.user_id %}
+    <footer class="mt-12 py-6 bg-white border-t">
+        <div class="container mx-auto px-4 text-center text-gray-600 text-sm">
+            <p class="mb-2">
+                <i class="fas fa-university"></i> 
+                Trường Đại học Kiến trúc Hà Nội
+            </p>
+            <p class="text-xs text-gray-500">
+                © 2024 Parking Management System. All rights reserved.
+            </p>
+        </div>
+    </footer>
+    {% endif %}
+    
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'js/app.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

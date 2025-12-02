@@ -32,17 +32,17 @@ class MongoDB:
             
             # Test connection
             self._client.admin.command('ping')
-            print("✅ Pinged MongoDB Atlas. Connected successfully!")
+            print("[OK] Pinged MongoDB Atlas. Connected successfully!")
             
             # Get database
             db_name = os.getenv('MONGODB_DB', 'parkingDBsql')
             self._db = self._client[db_name]
             
-            print(f"✅ Using database: {db_name}")
+            print(f"[OK] Using database: {db_name}")
             return self._db
             
         except Exception as e:
-            print(f"❌ MongoDB Atlas connection error: {e}")
+            print(f"[ERROR] MongoDB Atlas connection error: {e}")
             raise
 
     def get_db(self):
@@ -59,7 +59,7 @@ class MongoDB:
         """Ngắt kết nối"""
         if self._client:
             self._client.close()
-            print("✅ MongoDB Atlas disconnected")
+            print("[OK] MongoDB Atlas disconnected")
 
 # Singleton instance
 mongodb = MongoDB()

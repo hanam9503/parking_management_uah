@@ -8,6 +8,7 @@ urlpatterns = [
     path('', include('users.urls')),
     path('', include('vehicles.urls')),
     path('', include('university.urls')),
+    path('', include('camera_ai.urls')),
 ]
 
 # Serve media files in development
