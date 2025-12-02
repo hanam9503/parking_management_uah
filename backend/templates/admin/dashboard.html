@@ -88,11 +88,11 @@
     </div>
     
     <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
         <h2 class="text-xl font-bold mb-4">
             <i class="fas fa-tools"></i> Quản lý nhanh
         </h2>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
             <a href="{% url 'admin_teachers_list' %}" 
                class="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg text-center transition">
                 <i class="fas fa-users text-2xl mb-2"></i>
@@ -118,6 +118,98 @@
                 <i class="fas fa-chart-bar text-2xl mb-2"></i>
                 <p>Thống kê</p>
             </a>
+            <a href="{% url 'admin_camera_control' %}" 
+               class="bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg text-center transition">
+                <i class="fas fa-video text-2xl mb-2"></i>
+                <p>Camera AI</p>
+            </a>
         </div>
     </div>
+    
+    <!-- Camera System Status -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">
+            <i class="fas fa-camera"></i> Trạng thái Camera
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Camera 1 -->
+            <div class="border-l-4 border-blue-500 p-4 rounded-lg bg-blue-50">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold text-lg">
+                        <i class="fas fa-video text-blue-500"></i> Camera 1 (Check-in)
+                    </h3>
+                    <span id="status-camera-1" class="px-3 py-1 bg-gray-300 text-white rounded-full text-sm font-bold">
+                        ● Offline
+                    </span>
+                </div>
+                <div id="info-camera-1" class="text-sm text-gray-600">
+                    <p>Video: <span class="font-mono text-gray-800">--</span></p>
+                </div>
+            </div>
+            
+            <!-- Camera 2 -->
+            <div class="border-l-4 border-purple-500 p-4 rounded-lg bg-purple-50">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold text-lg">
+                        <i class="fas fa-video text-purple-500"></i> Camera 2 (Check-out)
+                    </h3>
+                    <span id="status-camera-2" class="px-3 py-1 bg-gray-300 text-white rounded-full text-sm font-bold">
+                        ● Offline
+                    </span>
+                </div>
+                <div id="info-camera-2" class="text-sm text-gray-600">
+                    <p>Video: <span class="font-mono text-gray-800">--</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="{% url 'admin_camera_control' %}" 
+               class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition">
+                <i class="fas fa-sliders-h"></i> Điều khiển chi tiết
+            </a>
+        </div>
+    </div>
+
 {% endblock %}
+
+<script>
+// Auto-update camera status every 3 seconds
+function updateCameraStatus() {
+    fetch('/simulation/api/status/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.status) {
+            updateCameraUI('camera_1', data.status.camera_1);
+            updateCameraUI('camera_2', data.status.camera_2);
+        }
+    })
+    .catch(error => console.error('Status error:', error));
+}
+
+function updateCameraUI(cameraId, cameraData) {
+    const statusEl = document.getElementById(`status-${cameraId}`);
+    const infoEl = document.getElementById(`info-${cameraId}`);
+    
+    if (cameraData.running) {
+        statusEl.className = 'px-3 py-1 bg-green-500 text-white rounded-full text-sm font-bold';
+        statusEl.textContent = '● ONLINE';
+    } else {
+        statusEl.className = 'px-3 py-1 bg-gray-400 text-white rounded-full text-sm font-bold';
+        statusEl.textContent = '● Offline';
+    }
+    
+    const videoName = cameraData.current_video || '--';
+    infoEl.innerHTML = `<p>Video: <span class="font-mono text-gray-800">${videoName}</span></p>`;
+}
+
+// Update immediately
+updateCameraStatus();
+// Then every 3 seconds
+setInterval(updateCameraStatus, 3000);
+</script>

@@ -84,6 +84,7 @@ def video_feed(request):
 @csrf_exempt
 @login_required
 @security_required
+@csrf_exempt
 def process_qr_scan(request):
     """
     API xử lý quét QR code và so sánh với camera
@@ -105,69 +106,81 @@ def process_qr_scan(request):
         if not qr_data:
             return JsonResponse({'error': 'QR data is required'}, status=400)
         
-        # Parse QR data
+        # Parse QR data để lấy vehicle_id và license_plate
         try:
-            vehicle_id, qr_plate = qr_data.split('|')
+            vehicle_id, qr_license_plate = qr_data.split('|')
         except ValueError:
-            return JsonResponse({'error': 'Invalid QR format'}, status=400)
+            return JsonResponse({
+                'success': False,
+                'message': 'QR code format sai. Format: VEHICLE_ID|LICENSE_PLATE'
+            }, status=400)
         
-        # Verify QR code
-        vehicle = QRCode.verify(qr_data)
+        # Verify QR code - kiểm tra xem vehicle có tồn tại và QR hợp lệ không
+        from vehicles.models import Vehicle
+        vehicle = Vehicle.get_by_id(vehicle_id)
+        
         if not vehicle:
             return JsonResponse({
                 'success': False,
-                'message': 'QR code không hợp lệ hoặc đã bị vô hiệu hóa'
+                'message': f'❌ Xe không tồn tại: {vehicle_id}',
+                'error_code': 'VEHICLE_NOT_FOUND'
             }, status=400)
         
-        # Process with camera
-        result = camera_service.process_vehicle_entry(qr_plate, entry_type)
+        # Kiểm tra license plate khớp với vehicle trong DB không
+        if vehicle.get('license_plate', '').strip().upper() != qr_license_plate.strip().upper():
+            return JsonResponse({
+                'success': False,
+                'message': f'❌ QR code không khớp!\nExpected: {vehicle.get("license_plate")}\nGot: {qr_license_plate}',
+                'error_code': 'INVALID_QR'
+            }, status=400)
+        
+        # ✅ QR code hợp lệ, tiến hành detect biển số
+        result = camera_service.process_vehicle_entry(qr_data, entry_type)
         
         if not result['success']:
             return JsonResponse(result, status=400)
         
-        # Nếu biển số khớp
-        if result['match']:
-            security_id = request.session.get('user_id')
+        # Xử lý check-in / check-out
+        security_id = request.session.get('user_id')
+        
+        try:
+            if entry_type == 'checkin':
+                ParkingHistory.checkin(
+                    vehicle_id=vehicle_id,
+                    detected_plate=result['detected_plate'],
+                    security_id=security_id,
+                    qr_license_plate=qr_license_plate,
+                    notes=f"QR verified. Detected: {result['detected_plate']} | Confidence: {result['confidence']:.2f}"
+                )
+                result['message'] = f"✅ Check-in thành công!\nXe: {result['detected_plate']}\nQR: Hợp lệ"
+                
+            elif entry_type == 'checkout':
+                ParkingHistory.checkout(
+                    vehicle_id=vehicle_id,
+                    security_id=security_id,
+                    notes=f"Camera AI verified: {result['detected_plate']} | QR: {qr_license_plate}"
+                )
+                result['message'] = f"✅ Check-out thành công!\nXe: {result['detected_plate']}\nQR: Hợp lệ"
             
-            try:
-                if entry_type == 'checkin':
-                    # Check-in
-                    ParkingHistory.checkin(
-                        vehicle_id=vehicle_id,
-                        detected_plate=result['detected_plate'],
-                        security_id=security_id,
-                        qr_license_plate=qr_plate
-                    )
-                    result['message'] = f"✅ Check-in thành công! Xe {result['detected_plate']}"
-                    
-                elif entry_type == 'checkout':
-                    # Check-out
-                    ParkingHistory.checkout(
-                        vehicle_id=vehicle_id,
-                        security_id=security_id,
-                        notes=f"Camera AI verified: {result['detected_plate']}"
-                    )
-                    result['message'] = f"✅ Check-out thành công! Xe {result['detected_plate']}"
-                
-                result['vehicle_info'] = {
-                    'id': str(vehicle['_id']),
-                    'license_plate': vehicle['license_plate'],
-                    'vehicle_type': vehicle['vehicle_type']
-                }
-                
-            except ValueError as e:
-                result['success'] = False
-                result['message'] = str(e)
-                return JsonResponse(result, status=400)
-        else:
-            result['message'] = f"❌ Biển số không khớp!\nQR: {result['qr_plate']}\nCamera: {result['detected_plate']}"
+            result['vehicle_info'] = {
+                'id': str(vehicle['_id']),
+                'license_plate': vehicle['license_plate'],
+                'vehicle_type': vehicle['vehicle_type'],
+                'teacher': vehicle.get('teacher_name', 'N/A')
+            }
+            result['verified'] = True
+            
+        except ValueError as e:
+            result['success'] = False
+            result['message'] = f"❌ Lỗi: {str(e)}"
+            return JsonResponse(result, status=400)
         
         return JsonResponse(result)
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 @login_required
 @security_required

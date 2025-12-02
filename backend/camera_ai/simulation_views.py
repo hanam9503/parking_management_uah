@@ -4,12 +4,13 @@ Views cho Simulated Camera System
 """
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 from users.decorators import login_required, admin_required, security_required
 from camera_ai.simulation import simulated_camera_service
 import cv2
+import numpy as np
 import json
 from pathlib import Path
 from django.conf import settings
@@ -261,6 +262,39 @@ def stream_camera_2(request):
         generate_camera_stream('camera_2'),
         content_type='multipart/x-mixed-replace; boundary=frame'
     )
+
+
+# ============================================
+# FRAME CAPTURE ENDPOINTS - For static preview
+# ============================================
+
+@login_required
+def capture_camera_frame(request, camera_id):
+    """Capture a single JPEG frame from camera for preview"""
+    try:
+        result = simulated_camera_service.get_frame_with_detection(camera_id)
+        
+        if result['success'] and result['frame'] is not None:
+            ret, buffer = cv2.imencode('.jpg', result['frame'])
+            if ret:
+                return HttpResponse(buffer.tobytes(), content_type='image/jpeg')
+        
+        # Return placeholder if offline
+        placeholder_path = Path(__file__).parent / 'static' / 'camera_offline.png'
+        if placeholder_path.exists():
+            with open(str(placeholder_path), 'rb') as f:
+                return HttpResponse(f.read(), content_type='image/png')
+        
+        # Return black frame
+        black_frame = 0 * np.ones((480, 640, 3), dtype=np.uint8)
+        ret, buffer = cv2.imencode('.jpg', black_frame)
+        return HttpResponse(buffer.tobytes(), content_type='image/jpeg')
+        
+    except Exception as e:
+        print(f"Frame capture error [{camera_id}]: {e}")
+        black_frame = 0 * np.ones((480, 640, 3), dtype=np.uint8)
+        ret, buffer = cv2.imencode('.jpg', black_frame)
+        return HttpResponse(buffer.tobytes(), content_type='image/jpeg')
 
 
 # ============================================

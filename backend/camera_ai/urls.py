@@ -29,6 +29,9 @@ urlpatterns = [
     path('simulation/stream/camera1/', simulation_views.stream_camera_1, name='stream_camera_1'),
     path('simulation/stream/camera2/', simulation_views.stream_camera_2, name='stream_camera_2'),
     
+    # Frame capture for preview
+    path('simulation/frame/<str:camera_id>/', simulation_views.capture_camera_frame, name='capture_camera_frame'),
+    
     # Security - Live View
     path('simulation/security/live/', simulation_views.security_live_view, name='security_live_view'),
 ]

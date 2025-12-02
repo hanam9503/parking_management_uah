@@ -338,16 +338,24 @@ class CameraAIService:
     
     def process_vehicle_entry(self, qr_plate, entry_type='checkin'):
         """
-        Xử lý luồng check-in/check-out
+        Xử lý luồng check-in/check-out với xác minh QR code
         
         Args:
-            qr_plate: Biển số từ QR code
+            qr_plate: Biển số từ QR code (format: VEHICLE_ID|LICENSE_PLATE)
             entry_type: 'checkin' hoặc 'checkout'
             
         Returns:
             dict: Kết quả xử lý
         """
         try:
+            # Parse QR data để lấy vehicle ID
+            try:
+                vehicle_id, qr_license_plate = qr_plate.split('|')
+                qr_normalized = self._normalize_plate_text(qr_license_plate)
+            except (ValueError, IndexError):
+                qr_normalized = self._normalize_plate_text(qr_plate)
+                vehicle_id = None
+            
             # Chụp ảnh
             frame = self.capture_frame()
             
@@ -355,34 +363,61 @@ class CameraAIService:
             plates = self.detect_license_plate(frame)
             
             if not plates:
+                # Nếu không detect được → chỉ cho phép nếu QR hợp lệ
                 return {
-                    'success': False,
-                    'message': 'Không phát hiện biển số trong ảnh',
-                    'detected_plate': None,
-                    'qr_plate': qr_plate,
-                    'match': False
+                    'success': True,
+                    'detected_plate': 'UNDETECTED',
+                    'qr_plate': qr_normalized,
+                    'match': True,  # Trust QR code
+                    'confidence': 0.0,
+                    'message': f'⚠️ Không detect được biển số, nhưng QR hợp lệ\nVehicle ID: {vehicle_id}',
+                    'camera_failed': True,
+                    'image_path': None,
+                    'timestamp': datetime.now().isoformat()
                 }
             
-            # Lấy biển số đầu tiên (có confidence cao nhất)
-            best_plate = max(plates, key=lambda x: x['confidence'])
+            # Lấy TOP 3 biển số có confidence cao nhất (smoothing)
+            top_plates = sorted(plates, key=lambda x: x['confidence'], reverse=True)[:3]
+            detected_plates = []
             
-            # OCR
-            ocr_result = self.extract_text_from_plate(frame, best_plate['bbox'])
+            for plate in top_plates:
+                ocr_result = self.extract_text_from_plate(frame, plate['bbox'])
+                if ocr_result:
+                    detected_plates.append({
+                        'text': ocr_result['text'],
+                        'confidence': ocr_result['confidence'],
+                        'detection_confidence': plate['confidence']
+                    })
             
-            if not ocr_result:
+            if not detected_plates:
                 return {
-                    'success': False,
-                    'message': 'Không đọc được text từ biển số',
-                    'detected_plate': None,
-                    'qr_plate': qr_plate,
-                    'match': False
+                    'success': True,
+                    'detected_plate': 'UNDETECTED',
+                    'qr_plate': qr_normalized,
+                    'match': True,  # Trust QR code
+                    'confidence': 0.0,
+                    'message': f'⚠️ Không đọc được biển số, nhưng QR hợp lệ\nVehicle ID: {vehicle_id}',
+                    'camera_failed': True,
+                    'image_path': None,
+                    'timestamp': datetime.now().isoformat()
                 }
             
-            detected_plate = ocr_result['text']
+            # Lấy biển số có confidence cao nhất
+            best_detection = max(detected_plates, key=lambda x: x['confidence'])
+            detected_plate = best_detection['text']
             
             # So sánh với QR code
-            qr_normalized = self._normalize_plate_text(qr_plate)
             match = (detected_plate == qr_normalized)
+            
+            # Nếu không khớp, kiểm tra các biển số khác trong TOP 3
+            if not match and len(detected_plates) > 1:
+                for alt_plate in detected_plates[1:]:
+                    if alt_plate['text'] == qr_normalized:
+                        # Tìm thấy khớp ở biển số thứ 2, 3
+                        detected_plate = alt_plate['text']
+                        best_detection['confidence'] = alt_plate['confidence']
+                        match = True
+                        break
             
             # Lưu ảnh
             image_path = self.save_captured_image(frame, detected_plate, entry_type)
@@ -392,9 +427,12 @@ class CameraAIService:
                 'detected_plate': detected_plate,
                 'qr_plate': qr_normalized,
                 'match': match,
-                'confidence': ocr_result['confidence'],
+                'confidence': best_detection['confidence'],
+                'detection_confidence': best_detection['detection_confidence'],
                 'image_path': image_path,
-                'message': 'Biển số khớp! Cho phép vào/ra' if match else 'Biển số không khớp! Từ chối',
+                'vehicle_id': vehicle_id,
+                'all_detections': detected_plates,  # Debug info
+                'message': f'✅ Biển số khớp! {detected_plate}' if match else f'❌ Biển số không khớp!\nQR: {qr_normalized}\nCamera: {detected_plate}',
                 'timestamp': datetime.now().isoformat()
             }
             
