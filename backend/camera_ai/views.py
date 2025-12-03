@@ -10,6 +10,7 @@ from users.decorators import login_required, security_required
 from camera_ai.service import camera_service
 from parking.models import ParkingHistory
 from vehicles.models import Vehicle, QRCode
+from bson import ObjectId
 import cv2
 import json
 
@@ -82,9 +83,6 @@ def video_feed(request):
     )
 
 @csrf_exempt
-@login_required
-@security_required
-@csrf_exempt
 def process_qr_scan(request):
     """
     API xử lý quét QR code và so sánh với camera
@@ -95,13 +93,28 @@ def process_qr_scan(request):
         "entry_type": "checkin" hoặc "checkout"
     }
     """
+    # Check authentication
+    if 'user_id' not in request.session:
+        return JsonResponse({
+            'success': False,
+            'error': 'Unauthorized - please login'
+        }, status=401)
+    
+    # Check authorization - only security staff
+    user_role = request.session.get('role')
+    if user_role != 'security':
+        return JsonResponse({
+            'success': False,
+            'error': 'Forbidden - security staff only'
+        }, status=403)
+    
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     try:
         data = json.loads(request.body)
         qr_data = data.get('qr_data')
-        entry_type = data.get('entry_type', 'checkin')
+        entry_type = data.get('entry_type', 'auto')  # Default to 'auto' for smart detection
         
         if not qr_data:
             return JsonResponse({'error': 'QR data is required'}, status=400)
@@ -127,18 +140,36 @@ def process_qr_scan(request):
             }, status=400)
         
         # Kiểm tra license plate khớp với vehicle trong DB không
-        if vehicle.get('license_plate', '').strip().upper() != qr_license_plate.strip().upper():
-            return JsonResponse({
-                'success': False,
-                'message': f'❌ QR code không khớp!\nExpected: {vehicle.get("license_plate")}\nGot: {qr_license_plate}',
-                'error_code': 'INVALID_QR'
-            }, status=400)
+        db_plate = vehicle.get('license_plate', '').strip().upper()
+        qr_plate_normalized = qr_license_plate.strip().upper()
+        
+        if db_plate != qr_plate_normalized:
+            # Log warning nhưng tiếp tục - để camera detection xác minh
+            print(f"⚠️ WARNING: QR plate mismatch!")
+            print(f"  DB: {db_plate}")
+            print(f"  QR: {qr_plate_normalized}")
+        
+        # Auto-detect entry type if 'auto'
+        if entry_type == 'auto':
+            # Check if vehicle currently in parking
+            from parking.models import ParkingHistory
+            existing_history = ParkingHistory.objects.find_one({
+                'vehicle_id': ObjectId(vehicle_id),
+                'status': 'inside'
+            })
+            # If vehicle in parking → checkout; otherwise → checkin
+            entry_type = 'checkout' if existing_history else 'checkin'
+            print(f"📊 Auto-detected entry_type: {entry_type} (vehicle {'inside' if existing_history else 'outside'})")
         
         # ✅ QR code hợp lệ, tiến hành detect biển số
         result = camera_service.process_vehicle_entry(qr_data, entry_type)
         
+        # Xử lý camera detection failures
         if not result['success']:
-            return JsonResponse(result, status=400)
+            # Chỉ reject nếu QR/Vehicle không hợp lệ
+            if result.get('error_code') in ['VEHICLE_NOT_FOUND', 'INVALID_QR']:
+                return JsonResponse(result, status=400)
+            # Nếu camera fail nhưng QR hợp lệ → tiếp tục (trust QR)
         
         # Xử lý check-in / check-out
         security_id = request.session.get('user_id')
@@ -149,16 +180,14 @@ def process_qr_scan(request):
                     vehicle_id=vehicle_id,
                     detected_plate=result['detected_plate'],
                     security_id=security_id,
-                    qr_license_plate=qr_license_plate,
-                    notes=f"QR verified. Detected: {result['detected_plate']} | Confidence: {result['confidence']:.2f}"
+                    qr_license_plate=qr_license_plate
                 )
                 result['message'] = f"✅ Check-in thành công!\nXe: {result['detected_plate']}\nQR: Hợp lệ"
                 
             elif entry_type == 'checkout':
                 ParkingHistory.checkout(
                     vehicle_id=vehicle_id,
-                    security_id=security_id,
-                    notes=f"Camera AI verified: {result['detected_plate']} | QR: {qr_license_plate}"
+                    security_id=security_id
                 )
                 result['message'] = f"✅ Check-out thành công!\nXe: {result['detected_plate']}\nQR: Hợp lệ"
             

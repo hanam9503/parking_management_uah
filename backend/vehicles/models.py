@@ -44,23 +44,23 @@ class Vehicle:
     @staticmethod
     def get_by_id(vehicle_id):
         """Lấy xe theo ID"""
-        return vehicles_collection.find_one({'_id': str_to_objectid(vehicle_id)})
+        return vehicles_collection.find_one({'_id': str_to_objectid(vehicle_id), 'is_active': True})
     
     @staticmethod
     def get_by_license_plate(license_plate):
         """Lấy xe theo biển số"""
         license_plate = license_plate.upper().replace(' ', '')
-        return vehicles_collection.find_one({'license_plate': license_plate})
+        return vehicles_collection.find_one({'license_plate': license_plate, 'is_active': True})
     
     @staticmethod
     def get_by_teacher(teacher_id):
         """Lấy xe của giảng viên"""
-        return list(vehicles_collection.find({'teacher_id': str_to_objectid(teacher_id)}))
+        return list(vehicles_collection.find({'teacher_id': str_to_objectid(teacher_id), 'is_active': True}))
     
     @staticmethod
     def get_all(vehicle_type=None, is_active=None):
         """Lấy tất cả xe"""
-        query = {}
+        query = {'is_active': True}  # Mặc định lấy xe còn hoạt động
         if vehicle_type:
             query['vehicle_type'] = vehicle_type
         if is_active is not None:
@@ -70,7 +70,13 @@ class Vehicle:
     @staticmethod
     def get_with_teacher_info(vehicle_id=None):
         """Lấy xe kèm thông tin giảng viên"""
+        # Luôn filter xe còn hoạt động
+        match_stage = {'is_active': True}
+        if vehicle_id:
+            match_stage['_id'] = str_to_objectid(vehicle_id)
+        
         pipeline = [
+            {'$match': match_stage},
             {
                 '$lookup': {
                     'from': 'teachers',
@@ -90,9 +96,6 @@ class Vehicle:
             },
             {'$unwind': '$user'}
         ]
-        
-        if vehicle_id:
-            pipeline.insert(0, {'$match': {'_id': str_to_objectid(vehicle_id)}})
         
         return list(vehicles_collection.aggregate(pipeline))
     

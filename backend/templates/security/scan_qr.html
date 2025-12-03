@@ -2,8 +2,14 @@
 
 {% block title %}Quét QR Code{% endblock %}
 
+{% block extra_css %}
+<!-- Thư viện html5-qrcode -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="container mx-auto max-w-4xl">
+    <!-- Header -->
     <div class="mb-6">
         <a href="{% url 'security_dashboard' %}" 
            class="text-blue-600 hover:underline mb-2 inline-block">
@@ -12,218 +18,485 @@
         <h1 class="text-3xl font-bold">
             <i class="fas fa-qrcode"></i> Quét QR Code
         </h1>
+        <p class="text-gray-600">Sử dụng camera để quét mã QR trên xe</p>
     </div>
-    
+
+    <!-- Status Bar -->
+    <div id="status-bar" class="bg-blue-100 border-l-4 border-blue-500 p-4 mb-6 rounded hidden">
+        <p class="text-blue-700" id="status-message">
+            <i class="fas fa-info-circle"></i> Đang khởi động camera...
+        </p>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Scanner Section -->
+        <!-- Camera Scanner -->
         <div class="bg-white rounded-lg shadow-lg p-6">
             <h2 class="text-xl font-bold mb-4">
-                <i class="fas fa-camera"></i> Máy quét
+                <i class="fas fa-camera"></i> Camera Scanner
             </h2>
-            
-            <!-- QR Scanner Demo -->
-            <div class="relative bg-gray-800 rounded-lg p-8 mb-4 qr-scanner" style="height: 300px;">
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="text-center text-white">
-                        <i class="fas fa-qrcode text-6xl mb-4 opacity-50"></i>
-                        <p class="text-lg mb-2">Đưa mã QR vào khung hình</p>
-                        <p class="text-sm opacity-70">Hệ thống sẽ tự động nhận diện</p>
-                    </div>
-                </div>
-                
-                <!-- Scanning Line Animation -->
-                <div class="scan-line"></div>
-                
-                <!-- Corner Markers -->
-                <div class="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-green-500"></div>
-                <div class="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-green-500"></div>
-                <div class="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-green-500"></div>
-                <div class="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-green-500"></div>
+
+            <!-- Camera Select -->
+            <div class="mb-4" id="camera-select-container" style="display: none;">
+                <label class="block text-sm font-medium mb-2">Chọn camera:</label>
+                <select id="camera-select" class="w-full px-3 py-2 border rounded-lg">
+                    <option value="">-- Chọn camera --</option>
+                </select>
             </div>
-            
-            <!-- Manual Input Alternative -->
-            <div class="bg-blue-50 p-4 rounded-lg">
+
+            <!-- Scanner Container -->
+            <div id="qr-reader" class="w-full rounded-lg overflow-hidden bg-black" style="height: 400px;">
+                <!-- Camera feed sẽ render ở đây -->
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="mt-4 grid grid-cols-2 gap-3">
+                <button id="btn-start" onclick="startScanner()" 
+                        class="bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold">
+                    <i class="fas fa-play"></i> Bật Camera
+                </button>
+                <button id="btn-stop" onclick="stopScanner()" 
+                        class="bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold" disabled>
+                    <i class="fas fa-stop"></i> Tắt Camera
+                </button>
+            </div>
+
+            <!-- Manual Input Fallback -->
+            <div class="mt-4 bg-blue-50 p-4 rounded-lg">
                 <p class="text-sm text-blue-800 mb-2">
-                    <i class="fas fa-info-circle"></i> Không quét được?
+                    <i class="fas fa-keyboard"></i> Không quét được? Nhập thủ công:
                 </p>
-                <form method="POST" action="{% url 'security_manual_entry' %}">
-                    {% csrf_token %}
-                    <div class="flex gap-2">
-                        <input type="text" name="license_plate" 
-                               placeholder="Nhập biển số thủ công"
-                               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                        <button type="submit" 
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
-                            Tìm
-                        </button>
-                    </div>
-                </form>
+                <div class="flex gap-2">
+                    <input type="text" id="manual-qr-input" 
+                           placeholder="VEHICLE_ID|LICENSE_PLATE"
+                           class="flex-1 px-3 py-2 border rounded-lg text-sm">
+                    <button onclick="processManualInput()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        Xử lý
+                    </button>
+                </div>
             </div>
         </div>
-        
-        <!-- Instructions Section -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-xl font-bold mb-4">
-                <i class="fas fa-book"></i> Hướng dẫn sử dụng
-            </h2>
-            
-            <div class="space-y-4">
-                <!-- Step 1 -->
-                <div class="flex items-start space-x-3">
-                    <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-                        1
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="font-semibold mb-1">Định vị mã QR</h3>
-                        <p class="text-sm text-gray-600">
-                            Đưa mã QR trên xe vào giữa khung hình quét. Giữ khoảng cách 10-30cm.
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- Step 2 -->
-                <div class="flex items-start space-x-3">
-                    <div class="flex-shrink-0 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold">
-                        2
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="font-semibold mb-1">Đợi xác nhận</h3>
-                        <p class="text-sm text-gray-600">
-                            Hệ thống sẽ tự động nhận diện và hiển thị thông tin xe. Kiểm tra kỹ trước khi xác nhận.
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- Step 3 -->
-                <div class="flex items-start space-x-3">
-                    <div class="flex-shrink-0 w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold">
-                        3
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="font-semibold mb-1">Check-in/out</h3>
-                        <p class="text-sm text-gray-600">
-                            Nhấn nút xác nhận để hoàn tất check-in hoặc check-out. Hệ thống sẽ cập nhật tự động.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tips -->
-            <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-                <h3 class="font-semibold text-yellow-800 mb-2">
-                    <i class="fas fa-lightbulb"></i> Mẹo sử dụng
+
+        <!-- Results & Instructions -->
+        <div class="space-y-6">
+            <!-- Scan Result -->
+            <div id="scan-result" class="bg-white rounded-lg shadow-lg p-6 hidden">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fas fa-check-circle text-green-600"></i> Kết quả quét
                 </h3>
-                <ul class="text-sm text-yellow-700 space-y-1">
-                    <li>✓ Đảm bảo mã QR không bị nhăn, rách</li>
-                    <li>✓ Quét ở nơi có ánh sáng đủ</li>
-                    <li>✓ Giữ điện thoại/máy quét ổn định</li>
-                    <li>✓ Nếu lỗi, thử nhập biển số thủ công</li>
-                </ul>
+                <div id="result-content" class="space-y-3">
+                    <!-- Result will be injected here -->
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Recent Scans -->
-    <div class="mt-6 bg-white rounded-lg shadow-lg p-6">
-        <h2 class="text-xl font-bold mb-4">
-            <i class="fas fa-history"></i> Quét gần đây
-        </h2>
-        
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Biển số</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giảng viên</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <!-- Demo data - Replace with real data -->
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            {{ now|date:"H:i" }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="font-bold text-blue-600">--</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            --
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <span class="text-gray-400">Chưa có dữ liệu</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm">
-                                --
-                            </span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <!-- Quick Stats -->
-    <div class="mt-6 grid grid-cols-3 gap-4">
-        <div class="bg-blue-100 rounded-lg p-4 text-center">
-            <i class="fas fa-qrcode text-3xl text-blue-600 mb-2"></i>
-            <p class="text-2xl font-bold text-blue-600" id="today-scans">0</p>
-            <p class="text-sm text-blue-700">Quét hôm nay</p>
-        </div>
-        
-        <div class="bg-green-100 rounded-lg p-4 text-center">
-            <i class="fas fa-check-circle text-3xl text-green-600 mb-2"></i>
-            <p class="text-2xl font-bold text-green-600" id="successful-scans">0</p>
-            <p class="text-sm text-green-700">Thành công</p>
-        </div>
-        
-        <div class="bg-red-100 rounded-lg p-4 text-center">
-            <i class="fas fa-times-circle text-3xl text-red-600 mb-2"></i>
-            <p class="text-2xl font-bold text-red-600" id="failed-scans">0</p>
-            <p class="text-sm text-red-700">Thất bại</p>
+
+            <!-- Instructions -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">
+                    <i class="fas fa-book"></i> Hướng dẫn
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">1</div>
+                        <div>
+                            <h3 class="font-semibold mb-1">Bật camera</h3>
+                            <p class="text-sm text-gray-600">Nhấn "Bật Camera" và cho phép truy cập camera khi trình duyệt yêu cầu.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold">2</div>
+                        <div>
+                            <h3 class="font-semibold mb-1">Quét mã QR</h3>
+                            <p class="text-sm text-gray-600">Đưa mã QR trên xe vào giữa khung hình. Giữ khoảng cách 10-30cm. Hệ thống tự động xử lý!</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold">3</div>
+                        <div>
+                            <h3 class="font-semibold mb-1">Xác nhận kết quả</h3>
+                            <p class="text-sm text-gray-600">Hệ thống tự động phát hiện xe ngoài/trong bãi và thực hiện CHECK-IN/OUT. Xem kết quả ngay!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips -->
+                <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                    <h3 class="font-semibold text-yellow-800 mb-2">
+                        <i class="fas fa-lightbulb"></i> Mẹo sử dụng
+                    </h3>
+                    <ul class="text-sm text-yellow-700 space-y-1">
+                        <li>✓ Đảm bảo mã QR không bị nhăn, rách</li>
+                        <li>✓ Quét ở nơi có ánh sáng đủ</li>
+                        <li>✓ Giữ điện thoại/máy quét ổn định</li>
+                        <li>✓ Nếu lỗi, thử nhập biển số thủ công</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-2">
+                <div class="bg-blue-100 rounded-lg p-3 text-center">
+                    <i class="fas fa-qrcode text-2xl text-blue-600 mb-1"></i>
+                    <p class="text-xl font-bold text-blue-600" id="scan-count">0</p>
+                    <p class="text-xs text-blue-700">Quét hôm nay</p>
+                </div>
+                <div class="bg-green-100 rounded-lg p-3 text-center">
+                    <i class="fas fa-check text-2xl text-green-600 mb-1"></i>
+                    <p class="text-xl font-bold text-green-600" id="success-count">0</p>
+                    <p class="text-xs text-green-700">Thành công</p>
+                </div>
+                <div class="bg-red-100 rounded-lg p-3 text-center">
+                    <i class="fas fa-times text-2xl text-red-600 mb-1"></i>
+                    <p class="text-xl font-bold text-red-600" id="fail-count">0</p>
+                    <p class="text-xs text-red-700">Thất bại</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<script>
-// Simulate QR scanning
-document.addEventListener('DOMContentLoaded', function() {
-    const scanner = document.querySelector('.qr-scanner');
-    
-    // Add click event to simulate scan (for demo)
-    scanner.addEventListener('click', function() {
-        // Show loading
-        this.style.borderColor = '#10b981';
-        
-        setTimeout(() => {
-            alert('Demo: QR Code quét thành công!\n\nTrong môi trường thực tế, tính năng này sẽ sử dụng camera để quét mã QR thật.');
-            this.style.borderColor = '';
-        }, 1000);
-    });
-    
-    // Update stats with animation
-    animateCounter('today-scans', 15);
-    animateCounter('successful-scans', 14);
-    animateCounter('failed-scans', 1);
-});
+<!-- Entry Type Modal -->
+<div id="entry-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg max-w-md w-full mx-4 p-6">
+        <h3 class="text-2xl font-bold mb-4">Chọn loại giao dịch</h3>
+        <div id="qr-info" class="mb-4 p-3 bg-gray-50 rounded">
+            <p class="text-sm text-gray-600">Mã QR:</p>
+            <p class="font-mono text-sm break-all" id="modal-qr-data">--</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <button onclick="processEntry('checkin')" 
+                    class="bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold">
+                <i class="fas fa-sign-in-alt"></i><br>CHECK-IN
+            </button>
+            <button onclick="processEntry('checkout')" 
+                    class="bg-red-600 hover:bg-red-700 text-white py-4 rounded-lg font-bold">
+                <i class="fas fa-sign-out-alt"></i><br>CHECK-OUT
+            </button>
+        </div>
+        <button onclick="closeModal()" 
+                class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg">
+            Hủy
+        </button>
+    </div>
+</div>
 
-function animateCounter(id, target) {
-    const element = document.getElementById(id);
-    let current = 0;
-    const increment = target / 50;
-    
-    const timer = setInterval(() => {
-        current += increment;
-        if (current >= target) {
-            element.textContent = target;
-            clearInterval(timer);
-        } else {
-            element.textContent = Math.floor(current);
+<script>
+    let html5QrcodeScanner = null;
+    let currentQrData = null;
+    let stats = { scan: 0, success: 0, fail: 0 };
+
+    // Initialize scanner
+    function initScanner() {
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+            disableFlip: false
+        };
+
+        html5QrcodeScanner = new Html5Qrcode("qr-reader");
+
+        // Get available cameras
+        Html5Qrcode.getCameras().then(cameras => {
+            if (cameras && cameras.length > 0) {
+                const select = document.getElementById('camera-select');
+                const container = document.getElementById('camera-select-container');
+                
+                cameras.forEach((camera, index) => {
+                    const option = document.createElement('option');
+                    option.value = camera.id;
+                    option.text = camera.label || `Camera ${index + 1}`;
+                    select.appendChild(option);
+                });
+
+                if (cameras.length > 1) {
+                    container.style.display = 'block';
+                }
+
+                showStatus('Camera sẵn sàng. Nhấn "Bật Camera" để bắt đầu.', 'success');
+            }
+        }).catch(err => {
+            showStatus('Không tìm thấy camera. Vui lòng kiểm tra quyền truy cập.', 'error');
+            console.error('Camera error:', err);
+        });
+    }
+
+    async function startScanner() {
+        const cameraSelect = document.getElementById('camera-select');
+        const cameraId = cameraSelect.value || { facingMode: "environment" };
+
+        try {
+            await html5QrcodeScanner.start(
+                cameraId,
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess,
+                onScanError
+            );
+
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-stop').disabled = false;
+            showStatus('Camera đang hoạt động. Quét mã QR...', 'info');
+        } catch (err) {
+            showStatus('Lỗi khởi động camera: ' + err, 'error');
+            console.error('Start error:', err);
         }
-    }, 20);
-}
+    }
+
+    async function stopScanner() {
+        try {
+            await html5QrcodeScanner.stop();
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-stop').disabled = true;
+            showStatus('Camera đã tắt', 'info');
+        } catch (err) {
+            console.error('Stop error:', err);
+        }
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log('QR Scanned:', decodedText);
+        
+        // Update stats
+        stats.scan++;
+        updateStats();
+
+        // Stop scanner
+        stopScanner();
+
+        // 🎯 Auto-process without modal
+        currentQrData = decodedText;
+        autoProcessQR(decodedText);
+    }
+
+    function onScanError(error) {
+        // Ignore scan errors (too noisy)
+        // console.warn('Scan error:', error);
+    }
+
+    function closeModal() {
+        document.getElementById('entry-modal').classList.add('hidden');
+        currentQrData = null;
+        // Restart scanner
+        startScanner();
+    }
+
+    async function processEntry(entryType) {
+        if (!currentQrData) return;
+
+        const resultDiv = document.getElementById('result-content');
+        resultDiv.innerHTML = '<p class="text-gray-600"><i class="fas fa-spinner fa-spin"></i> Đang xử lý...</p>';
+        document.getElementById('scan-result').classList.remove('hidden');
+        closeModal();
+
+        try {
+            // Call backend API
+            const response = await fetch('{% url "camera_api_scan" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    qr_data: currentQrData,
+                    entry_type: entryType
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                stats.success++;
+                resultDiv.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p class="text-green-800 font-bold mb-2">
+                            <i class="fas fa-check-circle"></i> ${result.message}
+                        </p>
+                        ${result.vehicle_info ? `
+                            <div class="text-sm text-gray-700 space-y-1">
+                                <p><strong>Biển số:</strong> ${result.vehicle_info.license_plate}</p>
+                                <p><strong>Loại xe:</strong> ${result.vehicle_info.vehicle_type}</p>
+                                <p><strong>Giảng viên:</strong> ${result.vehicle_info.teacher}</p>
+                                ${result.detected_plate ? `<p><strong>Phát hiện:</strong> ${result.detected_plate}</p>` : ''}
+                                ${result.confidence ? `<p><strong>Độ tin cậy:</strong> ${(result.confidence * 100).toFixed(1)}%</p>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                stats.fail++;
+                resultDiv.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800 font-bold">
+                            <i class="fas fa-times-circle"></i> ${result.message}
+                        </p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            stats.fail++;
+            resultDiv.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-800 font-bold">
+                        <i class="fas fa-exclamation-triangle"></i> Lỗi kết nối: ${error.message}
+                    </p>
+                </div>
+            `;
+        }
+
+        updateStats();
+        
+        // Auto hide after 5s and restart scanner
+        setTimeout(() => {
+            document.getElementById('scan-result').classList.add('hidden');
+            startScanner();
+        }, 5000);
+    }
+
+    // 🎯 New: Auto-process QR without modal - smart entry type detection
+    async function autoProcessQR(qrData) {
+        const resultDiv = document.getElementById('result-content');
+        resultDiv.innerHTML = '<p class="text-gray-600"><i class="fas fa-spinner fa-spin"></i> Đang phân tích và xử lý...</p>';
+        document.getElementById('scan-result').classList.remove('hidden');
+
+        try {
+            // Call backend API with 'auto' entry_type
+            const response = await fetch('{% url "camera_api_scan" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    qr_data: qrData,
+                    entry_type: 'auto'  // 🔄 Smart auto-detection
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                stats.success++;
+                const actionText = result.message.includes('Check-out') ? '✅ CHECK-OUT thành công!' : '✅ CHECK-IN thành công!';
+                resultDiv.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p class="text-green-800 font-bold mb-2">
+                            <i class="fas fa-check-circle"></i> ${actionText}
+                        </p>
+                        ${result.vehicle_info ? `
+                            <div class="text-sm text-gray-700 space-y-1">
+                                <p><strong>Biển số:</strong> ${result.vehicle_info.license_plate}</p>
+                                <p><strong>Loại xe:</strong> ${result.vehicle_info.vehicle_type}</p>
+                                <p><strong>Giảng viên:</strong> ${result.vehicle_info.teacher}</p>
+                                ${result.detected_plate && result.detected_plate !== 'UNDETECTED' ? `<p><strong>Camera:</strong> ${result.detected_plate}</p>` : ''}
+                                ${result.confidence ? `<p><strong>Độ tin cậy:</strong> ${(result.confidence * 100).toFixed(1)}%</p>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                stats.fail++;
+                resultDiv.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800 font-bold mb-2">
+                            <i class="fas fa-times-circle"></i> ${result.message || 'Xử lý thất bại'}
+                        </p>
+                        ${result.error_code ? `
+                            <p class="text-sm text-red-700 mt-2">Mã lỗi: ${result.error_code}</p>
+                        ` : ''}
+                        <button onclick="manualOverride('${qrData}')" class="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                            Nhập thủ công
+                        </button>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            stats.fail++;
+            resultDiv.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-800 font-bold">
+                        <i class="fas fa-exclamation-triangle"></i> Lỗi kết nối: ${error.message}
+                    </p>
+                </div>
+            `;
+        }
+
+        updateStats();
+        
+        // Auto hide after 5s and restart scanner
+        setTimeout(() => {
+            document.getElementById('scan-result').classList.add('hidden');
+            startScanner();
+        }, 5000);
+    }
+
+    // Manual override option
+    function manualOverride(qrData) {
+        currentQrData = qrData;
+        document.getElementById('modal-qr-data').textContent = qrData;
+        document.getElementById('entry-modal').classList.remove('hidden');
+    }
+
+    function processManualInput() {
+        const input = document.getElementById('manual-qr-input').value.trim();
+        if (!input) {
+            alert('Vui lòng nhập mã QR');
+            return;
+        }
+
+        currentQrData = input;
+        document.getElementById('modal-qr-data').textContent = input;
+        document.getElementById('entry-modal').classList.remove('hidden');
+    }
+
+    function showStatus(message, type) {
+        const statusBar = document.getElementById('status-bar');
+        const statusMessage = document.getElementById('status-message');
+        
+        statusBar.className = 'p-4 mb-6 rounded';
+        
+        if (type === 'error') {
+            statusBar.className += ' bg-red-100 border-l-4 border-red-500';
+            statusMessage.className = 'text-red-700';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+        } else if (type === 'success') {
+            statusBar.className += ' bg-green-100 border-l-4 border-green-500';
+            statusMessage.className = 'text-green-700';
+            statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+        } else {
+            statusBar.className += ' bg-blue-100 border-l-4 border-blue-500';
+            statusMessage.className = 'text-blue-700';
+            statusMessage.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+        }
+        
+        statusBar.classList.remove('hidden');
+        
+        // Auto hide after 5s
+        setTimeout(() => {
+            statusBar.classList.add('hidden');
+        }, 5000);
+    }
+
+    function updateStats() {
+        document.getElementById('scan-count').textContent = stats.scan;
+        document.getElementById('success-count').textContent = stats.success;
+        document.getElementById('fail-count').textContent = stats.fail;
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Initialize on load
+    window.addEventListener('load', initScanner);
 </script>
 {% endblock %}
